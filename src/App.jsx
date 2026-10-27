@@ -19,23 +19,22 @@ export default function App() {
   const [activePublicTab, setActivePublicTab] = useState('home'); // 'home' | 'demo' | 'trust' | 'docs'
   const [activeAppTab, setActiveAppTab] = useState('cockpit'); // 'cockpit' | 'studio' | 'sandbox'
 
-  // User & Organization Context
-  const [currentUser, setCurrentUser] = useState({
-    id: 'usr-lead',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@acme.internal',
-    role: 'SECURITY_LEAD',
-    title: 'Principal AppSec Engineer',
-    organizationId: 'org-acme'
-  });
+  // User & Organization Context (null by default for guest visitor)
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentOrg, setCurrentOrg] = useState(null);
 
-  const [currentOrg, setCurrentOrg] = useState({
-    id: 'org-acme',
-    name: 'Acme Corporation',
-    slug: 'acme-corp',
-    tier: 'ENTERPRISE',
-    domain: 'acmecloud.internal'
-  });
+  // Interactive Cursor Radial Glow Tracking
+  useEffect(() => {
+    const handlePointerMove = (e) => {
+      const glow = document.getElementById('glow');
+      if (glow) {
+        glow.style.setProperty('--x', `${e.clientX}px`);
+        glow.style.setProperty('--y', `${e.clientY}px`);
+      }
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => window.removeEventListener('pointermove', handlePointerMove);
+  }, []);
 
   const [findings, setFindings] = useState([]);
   const [selectedFinding, setSelectedFinding] = useState(null);

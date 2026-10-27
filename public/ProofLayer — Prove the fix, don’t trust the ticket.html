@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ProofLayer — Prove the fix, don’t trust the ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+:root{--bg:#14091A;--panel:#26102F;--line:#4A2A5C;--text:#FBEFE6;--mute:#BBA3C4;--brand:#FF6FA3;--ok:#F6C453;--warn:#FF8A4C;--bad:#FF4D6D;
+--f:'Bricolage Grotesque',system-ui,sans-serif;--m:'JetBrains Mono',ui-monospace,monospace;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f);font-size:17px;line-height:1.55;overflow-x:hidden}
+#glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(520px circle at var(--x,70%) var(--y,20%),rgba(255,111,163,.22),transparent 70%)}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.22;mask-image:radial-gradient(ellipse at 60% 20%,#000 10%,transparent 70%)}
+main,nav,footer{position:relative;z-index:1}body::after{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}.ring{position:absolute;top:-58px;right:-34px;width:124px;height:124px;z-index:3;pointer-events:none}.ring text{font:600 10.5px var(--m);fill:var(--ok);letter-spacing:2px}.card{transform-style:preserve-3d;will-change:transform}
+.w{max-width:1160px;margin:0 auto;padding:0 24px}
+nav .w{display:flex;justify-content:space-between;align-items:center;height:72px}
+.logo{font-weight:800;font-size:21px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;color:var(--text);text-decoration:none}
+.logo i{width:22px;height:22px;position:relative;display:inline-block}
+.logo i::before,.logo i::after{content:"";position:absolute;left:0;right:0;height:9px;border-radius:3px;border:2px solid var(--ok)}
+.logo i::before{top:0;border-color:var(--brand)}.logo i::after{bottom:0;transform:translateX(5px)}
+.btn{display:inline-block;font:600 16px var(--f);padding:13px 22px;border-radius:12px;background:linear-gradient(135deg,#FFD98A,#F4A340);color:#2A1200;text-decoration:none;border:0;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px #F6C453}
+.btn.g{background:transparent;border:1.5px solid var(--line);color:var(--text)}
+.btn:focus-visible,a:focus-visible{outline:3px solid var(--ok);outline-offset:3px}
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center;padding:56px 0 110px}
+h1{font-size:clamp(42px,6.2vw,84px);line-height:.98;letter-spacing:-.035em;font-weight:800;margin:0 0 24px}
+h1 .ln{display:block;overflow:hidden;padding-bottom:.08em}h1 .ln span{display:block}h1 .ln:last-of-type span{background:linear-gradient(90deg,#FFD98A,#FF6FA3);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--mute);font-size:19px;max-width:46ch;margin:0 0 32px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+/* verdict card */
+.card{background:linear-gradient(160deg,#31143C,#1B0A24);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 40px 80px -30px rgba(255,111,163,.5);position:relative}
+.ch{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:6px}
+.ch b{display:block;font-size:18px}.ch small{color:var(--mute);font-family:var(--m);font-size:12.5px}
+.chip{font:600 13px var(--f);padding:6px 13px;border-radius:99px;white-space:nowrap;transition:background .3s,color .3s}
+.chip.open{background:rgba(255,77,109,.16);color:var(--bad)}.chip.inc{background:rgba(255,138,76,.16);color:var(--warn)}.chip.fix{background:rgba(246,196,83,.16);color:var(--ok)}
+.stage{font-family:var(--m);font-size:12.5px;color:var(--mute);margin:18px 0 10px;min-height:20px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;font-size:15px;opacity:0}
+.row .ic{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;flex:none;background:var(--line)}
+.row.p .ic{background:var(--ok);color:#2B1A00}.row.f .ic{background:var(--bad);color:#2A0710}
+.row em{margin-left:auto;font:500 12.5px var(--m);color:var(--mute);font-style:normal}
+.row.f{border-color:rgba(255,77,109,.55)}
+.sealbar{display:flex;align-items:center;gap:14px;margin-top:14px;min-height:64px}
+.seal{width:60px;height:60px;border-radius:50%;border:2px dashed var(--ok);display:grid;place-items:center;color:var(--ok);font-weight:800;font-size:22px;opacity:0;flex:none;box-shadow:0 0 0 6px rgba(246,196,83,.08)}
+.hash{font:500 12px var(--m);color:var(--ok);word-break:break-all}
+/* sections */
+section{padding:100px 0}
+h2{font-size:clamp(32px,4.4vw,56px);line-height:1.03;letter-spacing:-.03em;font-weight:800;margin:0 0 18px;max-width:18ch}
+.sub{color:var(--mute);max-width:54ch;margin:0}
+.verd{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:20px;margin-top:48px;overflow:hidden;background:rgba(49,20,60,.55)}
+.verd div{padding:28px 24px;border-right:1px solid var(--line);transition:background .3s}
+.verd div:last-child{border:0}.verd div:hover{background:var(--panel)}
+.verd b{display:flex;align-items:center;gap:10px;font-size:24px;letter-spacing:-.02em;margin-bottom:8px}
+.verd b::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--c)}
+.verd p{margin:0;color:var(--mute);font-size:15px}
+.steps{display:grid;grid-template-columns:.8fr 1.2fr;gap:64px}
+.sticky{position:sticky;top:96px;align-self:start}
+.tl{position:relative;padding-left:44px}
+.tl .rail{position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.tl .fill{position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--brand),var(--ok));transform-origin:top;transform:scaleY(0)}
+.st{position:relative;padding:0 0 46px;opacity:.35;transition:opacity .4s}
+.st.on{opacity:1}
+.st::before{content:"";position:absolute;left:-41px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--line);transition:all .4s}
+.st.on::before{background:var(--ok);border-color:var(--ok);box-shadow:0 0 0 6px rgba(246,196,83,.15)}
+.st h3{margin:0 0 6px;font-size:23px;letter-spacing:-.02em}.st p{margin:0;color:var(--mute);max-width:50ch}
+/* proof demo */
+.proof{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.rec{background:#10061A;border:1px solid var(--line);border-radius:16px;padding:22px;font:400 13.5px/1.8 var(--m);overflow-x:auto}
+.rec .k{color:var(--mute)}.rec .v{color:var(--text)}.rec .vd{color:var(--ok);font-weight:500;transition:color .3s}
+.rec .vd.t{color:var(--warn)}
+.res{margin-top:16px;padding:14px 16px;border-radius:12px;font-weight:600;font-size:15px;min-height:50px;border:1px solid var(--line);color:var(--mute)}
+.res.ok{color:var(--ok);border-color:rgba(246,196,83,.5);background:rgba(246,196,83,.07)}.res.no{color:var(--bad);border-color:rgba(255,77,109,.5);background:rgba(255,77,109,.07)}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.note{font-size:14px;color:var(--mute);margin-top:14px;max-width:52ch}
+.who{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:44px}
+.who h3{font-size:22px;margin:0 0 8px;letter-spacing:-.02em;padding-top:18px;border-top:2px solid var(--brand)}
+.who p{margin:0;color:var(--mute)}
+.final{text-align:center;padding:120px 0 90px}
+.final h2{margin:0 auto 22px;max-width:16ch}.final .sub{margin:0 auto 32px}
+footer .w{padding-top:28px;padding-bottom:40px;border-top:1px solid var(--line);color:var(--mute);font-size:14px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.aud{margin:22px 0 0;color:var(--mute);font-size:15px}
+details{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px 16px;background:rgba(16,6,26,.6)}summary{cursor:pointer;font-weight:600;font-size:15px}
+pre.cmd{font:400 12.5px/1.6 var(--m);color:var(--text);white-space:pre-wrap;word-break:break-all;margin:12px 0 0;overflow-x:auto}
+.tag{display:inline-block;font:500 12px var(--m);color:var(--ok);border:1px solid rgba(246,196,83,.5);border-radius:99px;padding:3px 11px;margin-bottom:14px}
+.tech{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:44px}.tech h3{font-size:22px;margin:0 0 14px;letter-spacing:-.02em}
+.tech ul{list-style:none;margin:0;padding:0}.tech li{padding:12px 0 12px 34px;border-top:1px solid var(--line);position:relative;color:var(--text);font-size:16px}
+.tech li::before{content:"✓";position:absolute;left:4px;color:var(--ok);font-weight:800}.tech .soon li{color:var(--mute)}.tech .soon li::before{content:"○";color:var(--mute)}
+form.acc{max-width:520px;margin:34px auto 0;text-align:left;display:grid;gap:14px}form.acc label{font-weight:600;font-size:15px;display:grid;gap:6px}
+form.acc input,form.acc textarea{font:400 16px var(--f);color:var(--text);background:#10061A;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;width:100%}
+form.acc input:focus,form.acc textarea:focus{outline:3px solid var(--ok);outline-offset:2px}form.acc .note{margin:0}
+footer .w a{color:var(--text)}
+@media(max-width:900px){.tech{grid-template-columns:1fr;gap:32px}.hero,.steps,.proof{grid-template-columns:1fr;gap:40px}.verd{grid-template-columns:1fr 1fr}.verd div:nth-child(2){border-right:0}.verd div:nth-child(-n+2){border-bottom:1px solid var(--line)}.who{grid-template-columns:1fr}.sticky{position:static}section{padding:72px 0}}
+@media(max-width:520px){.verd{grid-template-columns:1fr}.verd div{border-right:0!important;border-bottom:1px solid var(--line)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<nav><div class="w"><a class="logo" href="#top"><i></i>ProofLayer</a><a class="btn g" href="#access">Request early access</a></div></nav>
+<main id="top">
+<div class="w hero">
+  <div>
+    <h1 aria-label="A fix is a claim until it’s proven.">
+      <span class="ln"><span>A fix is</span></span><span class="ln"><span>a claim until</span></span><span class="ln"><span>it’s proven.</span></span>
+    </h1>
+    <p class="lead" id="lead">Retest reported vulnerabilities. Detect incomplete fixes and alternate attack paths. Generate signed, independently verifiable records of what was tested and observed.</p>
+    <div class="cta" id="cta"><a class="btn" href="#access">Request early access</a><a class="btn g" href="#demo">Explore the demo</a></div><p class="aud">For penetration-testing firms and application security teams.</p>
+  </div>
+  <div class="card" id="card" aria-label="Animated example of a retest">
+    <svg class="ring" viewBox="0 0 124 124" aria-hidden="true"><defs><path id="c" d="M62 62m-46 0a46 46 0 1 1 92 0a46 46 0 1 1-92 0"/></defs><g id="rg" style="transform-origin:62px 62px"><text><textPath href="#c">SIGNED · REPEATABLE · VERIFIABLE · </textPath></text></g><circle cx="62" cy="62" r="26" fill="#14091A" stroke="#F6C453" stroke-dasharray="3 4"/><path d="M50 62l9 9 16-18" stroke="#F6C453" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="ch"><div><b>Invoice access by other users</b><small>F-1042 · broken access control</small></div><span class="chip open" id="chip">Open</span></div>
+    <div class="stage" id="stage">Original evidence saved</div>
+    <div class="row" id="r1"><span class="ic">✓</span>User B requests user A’s invoice<em>403</em></div>
+    <div class="row" id="r2"><span class="ic">✓</span>Same request through /v2/invoices<em>200</em></div>
+    <div class="row" id="r3"><span class="ic">✓</span>Guessing sequential invoice IDs<em>403</em></div>
+    <div class="sealbar"><div class="seal" id="seal">✓</div><div class="hash" id="hash"></div></div>
+  </div>
+</div>
+
+<section style="padding-top:20px"><div class="w">
+  <h2>Four honest answers, not one green tick.</h2>
+  <p class="sub">A 403 on one route doesn’t mean the weakness is gone. ProofLayer tests the security property, then reports what it actually found.</p>
+  <div class="verd" id="verd">
+    <div style="--c:var(--ok)"><b>Fixed</b><p>Every test for the property passes, including bypass attempts.</p></div>
+    <div style="--c:var(--warn)"><b>Incomplete</b><p>The original attack fails, but another path still exposes the data.</p></div>
+    <div style="--c:var(--bad)"><b>Still vulnerable</b><p>The original issue reproduces. The ticket should reopen.</p></div>
+    <div style="--c:var(--mute)"><b>Inconclusive</b><p>The test couldn’t decide, so it never pretends to.</p></div>
+  </div>
+</div></section>
+
+<section><div class="w steps">
+  <div class="sticky"><h2>From finding to proof in five steps.</h2><p class="sub">Import the report once. Every retest builds on the evidence from the original finding.</p></div>
+  <div class="tl" id="tl"><div class="rail"></div><div class="fill" id="fill"></div>
+    <div class="st"><h3>Find</h3><p>A tester discovers that one user can open another user’s invoice.</p></div>
+    <div class="st"><h3>Record</h3><p>The finding, reproduction steps, request, response and expected behavior are stored.</p></div>
+    <div class="st"><h3>Fix</h3><p>Developers patch the app so people see only the invoices they’re allowed to see.</p></div>
+    <div class="st"><h3>Retest</h3><p>Authorized tests repeat the attack and try alternate paths to the same data.</p></div>
+    <div class="st"><h3>Sign</h3><p>The verdict, results and evidence hashes are sealed with an Ed25519 signature.</p></div>
+  </div>
+</div></section>
+
+<section id="demo"><div class="w proof">
+  <div>
+    <h2>Verify a real signature, right here.</h2>
+    <p class="sub">This record is signed with Ed25519. Your browser checks the signature against the public key. Nothing is sent anywhere.</p>
+    <div class="acts"><button class="btn" id="verify">Verify signature</button><button class="btn g" id="tamper">Change the verdict</button></div>
+    <p class="note">Sample record signed with a throwaway demo key, not a real customer finding. A valid signature proves the record is authentic and unaltered. It doesn’t prove the test was right or that nothing else is vulnerable.</p>
+  </div>
+  <div>
+    <span class="tag">Sample record · demo key</span>
+    <div class="rec" id="rec" style="white-space:pre-wrap;word-break:break-all"></div>
+    <div class="res" id="res" role="status">Press “Verify signature” to check this record.</div>
+    <details><summary>Verify it yourself with OpenSSL</summary>
+    <pre class="cmd">printf '%s' '{"environment":"staging","evidence_sha256":"673374fe49a2f52131a6cf9982eeab87820fb22f1b258e85d4f5b90aee1fffc5","finding":"F-1042","issued":"2026-10-27T09:14:00Z","suite":"access-control@2.4","verdict":"incomplete"}' > record.json
+echo 9bc7ddc57ea0bbe978be1bc4318366818d5fc42924f36441902d58df0ec0973f2527cacac0b8266f11308926aeb9776052fe85c30709c016e68de7cb8da18f0a | xxd -r -p > sig.bin
+# save the public key below as pub.pem
+openssl pkeyutl -verify -pubin -inkey pub.pem -rawin -in record.json -sigfile sig.bin
+
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEA11Tm6/RPwhX/enmdYFkfndpwOwIfPowRrLCT6pk8JUo=
+-----END PUBLIC KEY-----</pre></details>
+  </div>
+</div></section>
+
+<section><div class="w">
+  <h2>What works today, and what’s still ahead.</h2>
+  <p class="sub">ProofLayer is in development. Here is what exists now and what’s still being built.</p>
+  <div class="tech">
+    <div><h3>Available now</h3><ul>
+      <li>Import findings from SARIF and Burp reports</li>
+      <li>Retest broken access control, SSRF and broken authentication scenarios</li>
+      <li>Bypass and alternate-path checks with four verdicts</li>
+      <li>Original evidence stored beside every retest</li>
+      <li>Ed25519-signed records with evidence hashes</li>
+      <li>Standalone verifier for checking records against a trusted public key</li></ul></div>
+    <div class="soon"><h3>In progress</h3><ul>
+      <li>Private workspaces and organization-level access controls</li>
+      <li>Tenant isolation for customer data</li>
+      <li>Secure execution of retests against customer systems</li>
+      <li>GitHub and Jira-style remediation workflows</li></ul>
+      <p class="note">In development, 57 tests across 12 suites pass. That’s a milestone, not a security guarantee.</p></div>
+  </div>
+</div></section>
+
+<section><div class="w">
+  <h2>Built for the people who sign off on fixes.</h2>
+  <div class="who">
+    <div><h3>Penetration-testing firms</h3><p>Retest client findings, keep the evidence, and hand over consistent remediation reports.</p></div>
+    <div><h3>Application security teams</h3><p>Validate developer fixes without repeating every manual test by hand.</p></div>
+    <div><h3>Auditors and risk teams</h3><p>Inspect the evidence behind a remediation claim instead of trusting a closed ticket.</p></div>
+  </div>
+</div></section>
+
+<div class="w final" id="access">
+  <h2>Make “fixed” something you can check.</h2>
+  <p class="sub">Tell us who you are and what you’d retest. We’ll reply by email to set up early access.</p>
+  <form class="acc" id="acc">
+    <label>Work email<input type="email" name="email" required autocomplete="email"></label>
+    <label>Company<input type="text" name="company" required autocomplete="organization"></label>
+    <label>What do you want to use it for?<textarea name="use" rows="3" required></textarea></label>
+    <button class="btn" type="submit">Request early access</button>
+    <p class="note">Submitting opens your email app with these details filled in. We’ll only use them to reply about access.</p>
+  </form>
+</div>
+</main>
+<footer><div class="w"><span>© 2026 ProofLayer</span><span><a href="mailto:hello@prooflayer.dev">Contact</a> · Privacy, terms and a security-disclosure policy will be published before we onboard customers.</span></div></footer>
+
+<script>
+(function(){
+gsap.registerPlugin(ScrollTrigger);
+var $=function(s){return document.querySelector(s)};
+var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var chip=$('#chip'),stage=$('#stage'),hash=$('#hash'),seal=$('#seal'),rows=['#r1','#r2','#r3'].map($);
+var H='ed25519 · 9f3ac4e1b07d52…c71e08aa';
+function set(el,cls,code){el.className='row '+cls;el.querySelector('.ic').textContent=cls=='p'?'✓':'✕';el.querySelector('em').textContent=code}
+function chipTo(t,c){chip.textContent=t;chip.className='chip '+c}
+function reset(){chipTo('Open','open');stage.textContent='Original evidence saved';hash.textContent='';gsap.set(rows,{opacity:0,x:0});gsap.set(seal,{opacity:0,scale:1,rotation:0});set(rows[0],'','…');set(rows[1],'','…');set(rows[2],'','…')}
+function finalState(){chipTo('Fixed','fix');stage.textContent='Retest 2 · after second patch';gsap.set(rows,{opacity:1});set(rows[0],'p','403');set(rows[1],'p','403');set(rows[2],'p','403');hash.textContent=H;gsap.set(seal,{opacity:1})}
+if(reduce){finalState()}else{
+  // hero intro
+  gsap.from('h1 .ln span',{yPercent:110,duration:1,ease:'expo.out',stagger:.12,delay:.1});
+  gsap.from(['#lead','#cta'],{opacity:0,y:20,duration:.9,ease:'power3.out',stagger:.15,delay:.7});
+  gsap.from('#card',{opacity:0,y:50,rotateX:12,duration:1.2,ease:'expo.out',delay:.4});
+  // the one orchestrated moment: retest story loops
+  var o={n:0},tl=gsap.timeline({repeat:-1,repeatDelay:2.4,delay:1.2});
+  tl.call(reset).to({}, {duration:1.4})
+    .call(function(){stage.textContent='Retest 1 · after first patch'})
+    .to(rows[0],{opacity:1,duration:.4}).call(function(){set(rows[0],'p','403')})
+    .to(rows[1],{opacity:1,duration:.4},'+=.5').call(function(){set(rows[1],'f','200')})
+    .to(rows[1],{x:8,duration:.07,repeat:5,yoyo:true})
+    .to(rows[2],{opacity:1,duration:.4},'+=.2').call(function(){set(rows[2],'p','403');chipTo('Incomplete','inc')})
+    .to({}, {duration:2.2})
+    .call(function(){stage.textContent='Retest 2 · after second patch';gsap.set(rows,{opacity:.4});rows[1].querySelector('em').textContent='…'})
+    .to(rows,{opacity:1,duration:.4,stagger:.35},'+=.6')
+    .call(function(){set(rows[1],'p','403')})
+    .call(function(){chipTo('Fixed','fix')})
+    .fromTo(seal,{opacity:0,scale:2.6,rotation:-30},{opacity:1,scale:1,rotation:0,duration:.55,ease:'back.out(2)'})
+    .to(o,{n:H.length,duration:1.2,ease:'none',onStart:function(){o.n=0},onUpdate:function(){hash.textContent=H.slice(0,Math.round(o.n))}},'<.3')
+    .to({}, {duration:2.6});
+  // verdict strip
+  gsap.from('#verd div',{opacity:0,y:30,duration:.8,stagger:.12,ease:'power3.out',scrollTrigger:{trigger:'#verd',start:'top 82%'}});
+  // headings
+  gsap.utils.toArray('h2').forEach(function(h){gsap.from(h,{opacity:0,y:36,duration:.9,ease:'power3.out',scrollTrigger:{trigger:h,start:'top 88%'}})});
+  gsap.from('.who > div',{opacity:0,y:30,stagger:.12,duration:.8,ease:'power3.out',scrollTrigger:{trigger:'.who',start:'top 85%'}});
+  gsap.from('.rec',{opacity:0,x:40,duration:.9,ease:'power3.out',scrollTrigger:{trigger:'.rec',start:'top 85%'}});
+}
+// timeline rail + step highlight
+var steps=gsap.utils.toArray('.st');
+if(reduce){steps.forEach(function(s){s.classList.add('on')});$('#fill').style.transform='scaleY(1)'}else{
+  gsap.to('#fill',{scaleY:1,ease:'none',scrollTrigger:{trigger:'#tl',start:'top 60%',end:'bottom 60%',scrub:.4}});
+  steps.forEach(function(s){ScrollTrigger.create({trigger:s,start:'top 62%',onEnter:function(){s.classList.add('on')},onLeaveBack:function(){s.classList.remove('on')}})});
+}
+if(!reduce){gsap.to('#rg',{rotation:360,duration:18,repeat:-1,ease:'none'});var cd=$('#card'),hx=gsap.quickTo(cd,'rotationY',{duration:.6}),hy=gsap.quickTo(cd,'rotationX',{duration:.6});addEventListener('pointermove',function(e){hx((e.clientX/innerWidth-.5)*10);hy(-(e.clientY/innerHeight-.5)*8)})}
+// cursor glow
+if(!reduce){var g=$('#glow');addEventListener('pointermove',function(e){gsap.to(g,{'--x':e.clientX+'px','--y':e.clientY+'px',duration:.8,ease:'power2.out'})})}
+// verifier demo
+var EV="673374fe49a2f52131a6cf9982eeab87820fb22f1b258e85d4f5b90aee1fffc5",SIG="9bc7ddc57ea0bbe978be1bc4318366818d5fc42924f36441902d58df0ec0973f2527cacac0b8266f11308926aeb9776052fe85c30709c016e68de7cb8da18f0a",PUB="d754e6ebf44fc215ff7a799d60591f9dda703b021f3e8c11acb093ea993c254a";
+var REC=function(v){return '{"environment":"staging","evidence_sha256":"'+EV+'","finding":"F-1042","issued":"2026-10-27T09:14:00Z","suite":"access-control@2.4","verdict":"'+v+'"}'};
+var hex=function(h){return new Uint8Array(h.match(/../g).map(function(x){return parseInt(x,16)}))};
+var tampered=false,res=$('#res'),rec=$('#rec');
+function render(){var v=tampered?'fixed':'incomplete',p=REC('@@').split('@@');rec.innerHTML=p[0]+'<span class="vd'+(tampered?'':' t')+'" id="vd">'+v+'</span>'+p[1]}
+render();
+$('#tamper').onclick=function(){tampered=!tampered;render();this.textContent=tampered?'Restore the verdict':'Change the verdict';res.className='res';res.textContent='Record changed. Verify it again.';if(!reduce)gsap.fromTo('#vd',{scale:1.3},{scale:1,duration:.5,ease:'back.out(3)'})};
+$('#verify').onclick=async function(){
+  res.className='res';res.textContent='Checking signature…';
+  try{
+    var key=await crypto.subtle.importKey('raw',hex(PUB),{name:'Ed25519'},false,['verify']);
+    var ok=await crypto.subtle.verify('Ed25519',key,hex(SIG),new TextEncoder().encode(REC(tampered?'fixed':'incomplete')));
+    if(ok){res.className='res ok';res.textContent='✓ Signature valid. The record is authentic and unaltered.'}
+    else{res.className='res no';res.textContent='✕ Signature doesn’t match. This record was altered after signing.';if(!reduce)gsap.fromTo(res,{x:-10},{x:0,duration:.5,ease:'elastic.out(1,.3)'})}
+  }catch(e){res.textContent='This browser can’t verify Ed25519 signatures yet. Use the OpenSSL steps below instead.'}
+};
+$('#acc').onsubmit=function(e){e.preventDefault();var f=e.target;location.href='mailto:hello@prooflayer.dev?subject='+encodeURIComponent('ProofLayer early access')+'&body='+encodeURIComponent('Work email: '+f.email.value+'\nCompany: '+f.company.value+'\nIntended use: '+f.use.value)};
+})();
+</script>
+</body>
+</html>
