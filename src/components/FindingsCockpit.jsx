@@ -13,7 +13,8 @@ import {
   Filter,
   Sparkles,
   ArrowRight,
-  Lock
+  Lock,
+  GitPullRequest
 } from 'lucide-react';
 
 export default function FindingsCockpit({ 
@@ -101,35 +102,49 @@ export default function FindingsCockpit({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       
-      {/* Banner / Value Proposition */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(14, 20, 34, 0.9) 0%, rgba(10, 14, 24, 0.95) 100%)',
-        border: '1px solid rgba(0, 242, 254, 0.2)',
-        borderRadius: '16px',
-        padding: '1.75rem 2rem',
+      {/* Banner / Value Proposition with Apple Liquid Glass Design */}
+      <div className="liquid-glass-banner" style={{
+        background: 'linear-gradient(135deg, rgba(46, 19, 58, 0.65) 0%, rgba(22, 8, 28, 0.75) 100%)',
+        backdropFilter: 'blur(28px) saturate(190%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+        border: '1px solid rgba(255, 255, 255, 0.14)',
+        borderRadius: '20px',
+        padding: '2rem 2.25rem',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 0 30px rgba(0, 242, 254, 0.05)'
+        boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 20px 60px rgba(0, 0, 0, 0.4)'
       }}>
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div style={{ maxWidth: '820px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#00f2fe', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#F6C453', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
               <Sparkles size={14} />
               Evidence-Based Verification Layer
             </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff', marginBottom: '0.6rem' }}>
+            <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#FBEFE6', marginBottom: '0.6rem' }}>
               A closed ticket is not proof that the risk has been eliminated.
             </h1>
-            <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6 }}>
+            <p style={{ color: '#BBA3C4', fontSize: '0.96rem', lineHeight: 1.6, margin: 0 }}>
               ProofLayer captures original pentest evidence, enforces deterministic security invariants, checks for naive-fix regressions & alternate attack paths, and issues audit-ready cryptographic proof records.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button className="btn-secondary" onClick={onOpenSandbox}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button className="btn-secondary liquid-glass-btn" onClick={onOpenSandbox}>
               <Server size={15} />
-              Open Live Target Sandbox
+              <span>Target Sandbox</span>
             </button>
+
+            <a 
+              href="https://github.com/salman2610/ProofLayer/issues" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-secondary liquid-glass-btn"
+              title="Report an issue or submit a pull request on GitHub"
+            >
+              <GitPullRequest size={15} />
+              <span>GitHub (Issues & PRs)</span>
+              <ExternalLink size={12} />
+            </a>
           </div>
         </div>
       </div>

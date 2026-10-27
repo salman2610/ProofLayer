@@ -981,25 +981,35 @@ MCowBQYDK2VwAyEA11Tm6/RPwhX/enmdYFkfndpwOwIfPowRrLCT6pk8JUo=
             © 2026 ProofLayer Inc. Cryptographic Remediation Verification Engine.
           </div>
 
-          <div className="designer-credit-badge">
+          <div className="designer-credit-badge liquid-glass-badge">
             <span>Made & designed with passion by </span>
             <a 
-              href="https://github.com/salman2610" 
+              href="https://salman2610.github.io" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="designer-link"
-              title="View Salman's GitHub & Portfolio"
+              title="View P Salmanulfaris Portfolio"
             >
-              Salman (@salman2610)
+              P Salmanulfaris
             </a>
             <span className="dot-sep">•</span>
             <a 
-              href="https://github.com/salman2610" 
+              href="https://salman2610.github.io" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="portfolio-link"
             >
               Portfolio ↗
+            </a>
+            <span className="dot-sep">•</span>
+            <a 
+              href="https://github.com/salman2610/ProofLayer/issues" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="github-issues-link"
+              title="Report an issue or submit a pull request on GitHub"
+            >
+              GitHub (Issues & PRs) ↗
             </a>
           </div>
 

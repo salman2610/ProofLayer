@@ -13,7 +13,9 @@ import {
   FileText,
   Lock,
   LogIn,
-  UserCheck
+  UserCheck,
+  GitPullRequest,
+  ExternalLink
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -36,11 +38,17 @@ export default function Navbar({
   selectedEnv,
   setSelectedEnv
 }) {
+  const GitHubIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="gh-icon">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+  );
+
   if (viewMode === 'public') {
     return (
-      <header className="clean-nav">
-        <div className="w nav-row">
-          {/* Official Logo Cropped from ProofLayer Logo Asset */}
+      <header className="liquid-glass-nav public-nav">
+        <div className="liquid-nav-container">
+          {/* Brand Logo */}
           <div 
             className="clean-logo-link" 
             onClick={() => { setActivePublicTab('home'); }} 
@@ -53,15 +61,16 @@ export default function Navbar({
             />
           </div>
 
-          <nav className="clean-nav-links">
+          {/* Apple Segmented Liquid Glass Navigation */}
+          <nav className="liquid-segmented-capsule">
             <button 
-              className={`nav-link-item ${activePublicTab === 'home' ? 'active' : ''}`}
+              className={`liquid-segment-tab ${activePublicTab === 'home' ? 'active' : ''}`}
               onClick={() => setActivePublicTab('home')}
             >
-              Product
+              <span>Product</span>
             </button>
             <button 
-              className={`nav-link-item ${activePublicTab === 'demo' ? 'active' : ''}`}
+              className={`liquid-segment-tab ${activePublicTab === 'demo' ? 'active' : ''}`}
               onClick={() => onExploreDemo ? onExploreDemo() : setActivePublicTab('demo')}
               id="nav-interactive-demo-btn"
             >
@@ -69,14 +78,14 @@ export default function Navbar({
               <span>Interactive Demo</span>
             </button>
             <button 
-              className={`nav-link-item ${activePublicTab === 'trust' ? 'active' : ''}`}
+              className={`liquid-segment-tab ${activePublicTab === 'trust' ? 'active' : ''}`}
               onClick={() => setActivePublicTab('trust')}
             >
               <Lock size={14} />
               <span>Trust & Security</span>
             </button>
             <button 
-              className={`nav-link-item ${activePublicTab === 'docs' ? 'active' : ''}`}
+              className={`liquid-segment-tab ${activePublicTab === 'docs' ? 'active' : ''}`}
               onClick={() => setActivePublicTab('docs')}
             >
               <FileText size={14} />
@@ -84,12 +93,25 @@ export default function Navbar({
             </button>
           </nav>
 
-          {/* Right Action Buttons with Explicit, Prominent Login */}
-          <div className="clean-nav-actions">
+          {/* Right Action Buttons */}
+          <div className="liquid-nav-actions">
+            {/* GitHub Issues & PRs Link */}
+            <a 
+              href="https://github.com/salman2610/ProofLayer" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="liquid-glass-btn github-btn"
+              title="View ProofLayer on GitHub: Open Issues & Pull Requests"
+            >
+              <GitHubIcon />
+              <span>GitHub (Issues & PRs)</span>
+              <ExternalLink size={12} className="ext-icon" />
+            </a>
+
             {currentUser ? (
               <div className="nav-user-session">
                 <button 
-                  className="btn nav-enter-btn"
+                  className="liquid-glass-primary-btn"
                   onClick={() => setViewMode('app')}
                 >
                   <Building2 size={15} />
@@ -97,7 +119,7 @@ export default function Navbar({
                 </button>
 
                 <button 
-                  className="btn g persona-quick-btn"
+                  className="liquid-glass-btn"
                   onClick={onOpenPersonaSwitcher}
                   title="Switch Role or Persona"
                 >
@@ -106,7 +128,7 @@ export default function Navbar({
                 </button>
 
                 <button 
-                  className="btn g icon-nav-btn"
+                  className="liquid-glass-btn icon-btn"
                   onClick={onLogout}
                   title="Sign Out"
                 >
@@ -115,9 +137,8 @@ export default function Navbar({
               </div>
             ) : (
               <div className="nav-guest-actions">
-                {/* PROMINENT LOGIN BUTTON */}
                 <button 
-                  className="btn g login-highlight-btn"
+                  className="liquid-glass-btn login-btn"
                   onClick={() => onOpenAuthModal('login')}
                   id="nav-login-btn"
                 >
@@ -125,18 +146,16 @@ export default function Navbar({
                   <span>Sign In</span>
                 </button>
 
-                {/* Instant 1-Click Demo Personas Switcher */}
                 <button 
-                  className="btn g persona-demo-pill"
+                  className="liquid-glass-btn persona-pill-btn"
                   onClick={() => onOpenAuthModal('personas')}
                   title="One-click switch to Lead, Developer, Auditor, or Owner personas"
                 >
                   <span>Personas</span>
                 </button>
 
-                {/* Early Access / Get Started */}
                 <button 
-                  className="btn get-started-btn"
+                  className="liquid-glass-primary-btn"
                   onClick={() => onOpenAuthModal('signup')}
                 >
                   <span>Get started</span>
@@ -149,105 +168,144 @@ export default function Navbar({
     );
   }
 
-  // Authenticated Application Top Bar
+  // Authenticated Application Top Bar (Spacious Apple Liquid Glass Design)
   return (
-    <header className="clean-nav app-header">
-      <div className="w nav-row">
-        <div 
-          className="clean-logo-link" 
-          onClick={() => setViewMode('public')} 
-          style={{ cursor: 'pointer' }} 
-          title="Return to Public Website"
-        >
-          <img 
-            src="/prooflayer-logo.png" 
-            alt="ProofLayer" 
-            className="navbar-brand-logo"
-          />
+    <header className="liquid-glass-nav app-header">
+      <div className="liquid-nav-container app-container-fluid">
+        {/* Left Zone: Brand + Tenant Identity */}
+        <div className="nav-left-group">
+          <div 
+            className="clean-logo-link" 
+            onClick={() => setViewMode('public')} 
+            style={{ cursor: 'pointer' }} 
+            title="Return to Public Website"
+          >
+            <img 
+              src="/prooflayer-logo.png" 
+              alt="ProofLayer" 
+              className="navbar-brand-logo"
+            />
+          </div>
+
+          <div 
+            className="liquid-org-badge" 
+            onClick={onOpenTeamSettings} 
+            title="Organization & Tenant Settings"
+          >
+            <Building2 size={14} className="gold" />
+            <span className="org-name-text">{currentOrg?.name || 'Acme Corporation'}</span>
+            <span className="org-tier-tag">{currentOrg?.tier || 'ENTERPRISE'}</span>
+          </div>
         </div>
 
-        {/* Organization Context Switcher */}
-        <div className="org-badge-pill" onClick={onOpenTeamSettings} title="Click to view Organization & Team Members">
-          <Building2 size={14} className="gold" />
-          <span className="org-name-text">{currentOrg?.name || 'Acme Corporation'}</span>
-          <span className="org-tier-tag">{currentOrg?.tier || 'ENTERPRISE'}</span>
-        </div>
-
-        {/* Main App Navigation Tabs */}
-        <nav className="clean-nav-links app-tabs">
+        {/* Center Zone: Segmented Liquid Glass Navigation Capsule */}
+        <nav className="liquid-segmented-capsule app-center-tabs">
           <button 
-            className={`nav-link-item ${activeAppTab === 'cockpit' ? 'active' : ''}`}
+            className={`liquid-segment-tab ${activeAppTab === 'cockpit' ? 'active' : ''}`}
             onClick={() => setActiveAppTab('cockpit')}
+            title="Remediation Cockpit"
           >
-            <ShieldCheck size={16} />
-            <span>Remediation Cockpit</span>
+            <ShieldCheck size={14} />
+            <span className="tab-text-full">Remediation Cockpit</span>
+            <span className="tab-text-compact">Cockpit</span>
           </button>
 
           <button 
-            className={`nav-link-item ${activeAppTab === 'studio' ? 'active' : ''}`}
+            className={`liquid-segment-tab ${activeAppTab === 'studio' ? 'active' : ''}`}
             onClick={() => setActiveAppTab('studio')}
+            title="Proof Studio"
           >
-            <RotateCcw size={16} />
-            <span>Proof Studio</span>
+            <RotateCcw size={14} />
+            <span className="tab-text-full">Proof Studio</span>
+            <span className="tab-text-compact">Studio</span>
           </button>
 
           <button 
-            className={`nav-link-item ${activeAppTab === 'sandbox' ? 'active' : ''}`}
+            className={`liquid-segment-tab ${activeAppTab === 'sandbox' ? 'active' : ''}`}
             onClick={() => setActiveAppTab('sandbox')}
+            title="Sandbox Targets"
           >
-            <Server size={16} />
-            <span>Sandbox Targets</span>
+            <Server size={14} />
+            <span className="tab-text-full">Sandbox Targets</span>
+            <span className="tab-text-compact">Sandbox</span>
           </button>
         </nav>
 
-        <div className="clean-nav-actions app-actions">
-          {/* Environment Selector */}
+        {/* Right Zone: Controls, Environment, User, GitHub */}
+        <div className="nav-right-group">
+          {/* GitHub Issues & PRs Button */}
+          <a 
+            href="https://github.com/salman2610/ProofLayer" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="liquid-glass-btn github-btn"
+            title="GitHub Repository: View Code, Open Issues & Pull Requests"
+          >
+            <GitHubIcon />
+            <span className="gh-label">Issues & PRs</span>
+          </a>
+
+          {/* Environment Selector Dropdown */}
           <select 
             value={selectedEnv} 
             onChange={(e) => setSelectedEnv(e.target.value)}
-            className="clean-env-select"
+            className="liquid-glass-select"
+            title="Active Testing Target Environment"
           >
             <option value="staging">Staging (Safe)</option>
             <option value="preprod">Pre-Production</option>
             <option value="production">Production (Guarded)</option>
           </select>
 
-          {/* User Role Pill & Persona Switcher */}
+          {/* User Persona Chip */}
           <div 
-            className="user-session-chip" 
+            className="liquid-user-chip" 
             onClick={onOpenPersonaSwitcher}
-            title="Click to switch persona or RBAC role"
+            title={`Active User: ${currentUser?.name || 'Sarah Chen'} (${(currentUser?.role || 'SECURITY_LEAD').replace('_', ' ')}) — Click to switch persona or role`}
           >
-            <span className="user-name">{currentUser?.name?.split(' ')[0] || 'User'}</span>
+            <div className="user-avatar-circle">
+              {currentUser ? currentUser.name.split(' ').map(n => n[0]).join('') : 'SC'}
+            </div>
+            <span className="user-name">{currentUser ? currentUser.name.split(' ')[0] : 'Sarah'}</span>
             <span className={`role-pill ${(currentUser?.role || 'SECURITY_LEAD').toLowerCase()}`}>
               {(currentUser?.role || 'SECURITY_LEAD').replace('_', ' ')}
             </span>
-            <ChevronDown size={13} />
+            <ChevronDown size={12} className="chip-chevron" />
           </div>
 
-          {/* Team Settings */}
-          <button className="btn g icon-btn" onClick={onOpenTeamSettings} title="Organization & Team Members">
-            <Users size={15} />
-          </button>
+          {/* Action Icons */}
+          <div className="liquid-icon-group">
+            <button 
+              className="liquid-glass-btn icon-btn" 
+              onClick={onOpenTeamSettings} 
+              title="Team Members & RBAC Roles"
+            >
+              <Users size={15} />
+            </button>
 
-          {/* Audit Trail */}
-          <button className="btn g icon-btn" onClick={onOpenAuditTrail} title="Audit Ledger">
-            <History size={15} />
-          </button>
+            <button 
+              className="liquid-glass-btn icon-btn" 
+              onClick={onOpenAuditTrail} 
+              title="Audit Ledger"
+            >
+              <History size={15} />
+            </button>
+          </div>
 
-          {/* Import Finding */}
-          <button className="btn import-btn" onClick={onOpenImport}>
+          {/* Import Finding CTA */}
+          <button className="liquid-glass-primary-btn import-btn" onClick={onOpenImport}>
             <PlusCircle size={15} />
             <span>Import</span>
           </button>
 
-          {/* Exit / Public Website */}
+          {/* Return to Public Website */}
           <button 
-            className="btn g exit-btn" 
+            className="liquid-glass-btn exit-btn" 
             onClick={() => setViewMode('public')} 
             title="Switch to Public Product Website"
           >
-            Website
+            <span>Site</span>
+            <ExternalLink size={12} />
           </button>
         </div>
       </div>

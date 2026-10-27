@@ -12,6 +12,7 @@ import IssueProofModal from './components/IssueProofModal.jsx';
 import AuditTrailModal from './components/AuditTrailModal.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import TeamSettingsModal from './components/TeamSettingsModal.jsx';
+import { Lock, GitPullRequest, ExternalLink } from 'lucide-react';
 
 export default function App() {
   // Navigation Modes: 'public' (landing/demo/trust/docs) vs 'app' (authenticated workspace)
@@ -352,6 +353,7 @@ export default function App() {
 
       {/* VIEW MODE 2: AUTHENTICATED APPLICATION */}
       {viewMode === 'app' && (
+        <>
         <main className="main-content">
           {activeAppTab === 'cockpit' && (
             <FindingsCockpit 
@@ -385,6 +387,67 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Authenticated Apple Liquid Glass Footer */}
+        <footer className="app-liquid-footer">
+          <div className="w app-footer-inner">
+            <div className="app-footer-left">
+              <span className="crypto-badge">
+                <Lock size={12} />
+                <span>RFC 8032 Ed25519 Sealed</span>
+              </span>
+              <span className="app-footer-dim">ProofLayer Invariant Verification Layer</span>
+            </div>
+
+            <div className="designer-credit-badge liquid-glass-badge">
+              <span>Made & designed with passion by </span>
+              <a 
+                href="https://salman2610.github.io" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="designer-link"
+                title="View P Salmanulfaris Portfolio"
+              >
+                P Salmanulfaris
+              </a>
+              <span className="dot-sep">•</span>
+              <a 
+                href="https://salman2610.github.io" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="portfolio-link"
+              >
+                Portfolio ↗
+              </a>
+              <span className="dot-sep">•</span>
+              <a 
+                href="https://github.com/salman2610/ProofLayer/issues" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="github-issues-link"
+                title="Report an issue or submit a pull request on GitHub"
+              >
+                GitHub (Issues & PRs) ↗
+              </a>
+            </div>
+
+            <div className="app-footer-right">
+              <a 
+                href="https://github.com/salman2610/ProofLayer" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="liquid-glass-btn github-btn"
+                style={{ padding: '6px 14px', fontSize: '12.5px' }}
+                title="View repository source on GitHub"
+              >
+                <GitPullRequest size={13} />
+                <span>GitHub Repo</span>
+                <ExternalLink size={11} />
+              </a>
+            </div>
+          </div>
+        </footer>
+        </>
       )}
 
       {/* Proof Record Certificate Modal */}

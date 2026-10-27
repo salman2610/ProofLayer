@@ -611,21 +611,45 @@ body::before {
   outline-offset: 3px;
 }
 
-/* Clean Header & Navigation Bar */
-.clean-nav {
+/* ==========================================================================
+   APPLE LIQUID GLASS NAVIGATION BAR & SEGMENTED CONTROLS
+   ========================================================================== */
+
+.liquid-glass-nav {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(20, 9, 26, 0.88);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--line);
+  z-index: 1000;
+  background: rgba(18, 7, 24, 0.72);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.clean-nav .nav-row {
+.liquid-nav-container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  height: 68px;
+  gap: 16px;
+}
+
+.app-container-fluid {
+  max-width: 100%;
+  padding: 0 16px;
+  gap: 10px;
+}
+
+.nav-left-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .clean-logo-link {
@@ -636,115 +660,349 @@ body::before {
 }
 
 .navbar-brand-logo {
-  height: 38px;
+  height: 36px;
   width: auto;
   object-fit: contain;
 }
 
-.clean-nav-links {
+.liquid-org-badge {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-
-.nav-link-item {
-  background: transparent;
-  border: none;
-  color: var(--mute);
-  font: 600 15px var(--f);
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.2s, background 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 
-.nav-link-item:hover {
+.liquid-org-badge:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(246, 196, 83, 0.4);
+  transform: translateY(-1px);
+}
+
+.org-name-text {
+  font: 600 12.5px var(--f);
   color: var(--text);
-  background: rgba(74, 42, 92, 0.25);
-}
-
-.nav-link-item.active {
-  color: var(--ok);
-  background: rgba(246, 196, 83, 0.1);
-}
-
-.clean-nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.nav-guest-actions, .nav-user-session {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.login-highlight-btn {
-  border-color: var(--line) !important;
-  color: var(--text) !important;
-  font-weight: 700 !important;
-}
-
-.login-highlight-btn:hover {
-  border-color: var(--brand) !important;
-  color: #fff !important;
-  background: rgba(255, 111, 163, 0.15) !important;
-}
-
-.persona-demo-pill {
-  padding: 8px 14px;
-  font-size: 13px;
-  border-radius: 99px;
-  border-color: rgba(255, 111, 163, 0.5) !important;
-  color: var(--brand) !important;
-  background: rgba(255, 111, 163, 0.08) !important;
-}
-
-.persona-demo-pill:hover {
-  background: rgba(255, 111, 163, 0.2) !important;
-}
-
-.org-badge-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 99px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  cursor: pointer;
 }
 
 .org-tier-tag {
-  font: 600 11px var(--m);
-  background: rgba(255, 111, 163, 0.15);
+  font: 700 10px var(--m);
+  background: rgba(255, 111, 163, 0.18);
   color: var(--brand);
-  padding: 2px 7px;
+  border: 1px solid rgba(255, 111, 163, 0.3);
+  padding: 2px 6px;
   border-radius: 99px;
+  letter-spacing: 0.04em;
 }
 
-.clean-env-select {
-  background: var(--bg-input);
+/* Apple Liquid Glass Segmented Pill Navigation */
+.liquid-segmented-capsule {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.25);
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.liquid-segment-tab {
+  background: transparent;
+  border: none;
+  color: var(--mute);
+  font: 600 13px var(--f);
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.liquid-segment-tab:hover {
   color: var(--text);
-  border: 1px solid var(--line);
-  padding: 7px 12px;
-  border-radius: 8px;
-  font: 500 13px var(--m);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.user-session-chip {
+.liquid-segment-tab.active {
+  color: #2A1200;
+  background: linear-gradient(135deg, #FFD98A, #F4A340);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 4px 14px rgba(246, 196, 83, 0.45);
+  font-weight: 700;
+}
+
+/* Right Zone Grouping */
+.nav-right-group,
+.liquid-nav-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Liquid Glass Buttons */
+.liquid-glass-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
   padding: 6px 12px;
-  border-radius: 10px;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  color: var(--text);
+  font: 600 13px var(--f);
   cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+.liquid-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 6px 20px rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+.liquid-glass-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #FFD98A, #F4A340);
+  color: #2A1200;
+  border: none;
+  border-radius: 12px;
+  padding: 6px 15px;
+  font: 700 13px var(--f);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 6px 20px rgba(246, 196, 83, 0.35);
+  white-space: nowrap;
+}
+
+.liquid-glass-primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 10px 28px rgba(246, 196, 83, 0.5);
+  color: #14091A;
+}
+
+/* GitHub Issues & PRs Button */
+.github-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.github-btn:hover {
+  background: rgba(246, 196, 83, 0.12);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.gh-icon {
+  flex-shrink: 0;
+}
+
+.ext-icon {
+  opacity: 0.6;
+}
+
+/* Liquid Glass Select & Chip */
+.liquid-glass-select {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 6px 10px;
+  color: var(--text);
+  font: 500 12px var(--m);
+  cursor: pointer;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  outline: none;
+  white-space: nowrap;
+}
+
+.liquid-glass-select:focus {
+  border-color: var(--ok);
+}
+
+.liquid-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px 4px 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.liquid-user-chip .role-pill {
+  display: none;
+}
+
+@media (min-width: 1600px) {
+  .liquid-user-chip .role-pill {
+    display: inline-flex;
+  }
+}
+
+.liquid-user-chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 111, 163, 0.4);
+}
+
+.liquid-user-chip .user-name {
+  font: 600 13px var(--f);
+  color: var(--text);
+}
+
+.chip-chevron {
+  color: var(--mute);
+}
+
+.liquid-icon-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liquid-glass-btn.icon-btn {
+  padding: 8px 10px;
+}
+
+.persona-pill-btn {
+  border-color: rgba(255, 111, 163, 0.4);
+  color: var(--brand);
+}
+
+.user-avatar-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6FA3, #F6C453);
+  color: #1A0B22;
+  font: 800 10.5px var(--f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.02em;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 2px 6px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.tab-text-compact {
+  display: none;
+}
+
+/* Fluid responsive rules for Apple liquid navbar */
+@media (max-width: 1540px) {
+  .tab-text-full {
+    display: none;
+  }
+  .tab-text-compact {
+    display: inline;
+  }
+  .liquid-org-badge .org-tier-tag {
+    display: none;
+  }
+  .liquid-nav-container {
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 1380px) {
+  .github-btn .gh-label {
+    display: none;
+  }
+}
+
+@media (max-width: 1250px) {
+  .liquid-user-chip .role-pill {
+    display: none;
+  }
+  .exit-btn span {
+    display: none;
+  }
+  .liquid-segmented-capsule {
+    gap: 2px;
+    padding: 3px;
+  }
+  .liquid-segment-tab {
+    padding: 6px 12px;
+    font-size: 12.5px;
+  }
+}
+
+/* Authenticated Liquid Glass Bottom Footer */
+.app-liquid-footer {
+  margin-top: auto;
+  background: rgba(18, 7, 24, 0.75);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.app-footer-inner {
+  max-width: 1600px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.app-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.crypto-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font: 600 11.5px var(--m);
+  letter-spacing: 0.02em;
+}
+
+.app-footer-dim {
+  color: var(--mute);
+  font: 500 12.5px var(--f);
 }
 
 /* ==========================================================================
