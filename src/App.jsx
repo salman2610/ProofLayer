@@ -36,6 +36,24 @@ export default function App() {
     return () => window.removeEventListener('pointermove', handlePointerMove);
   }, []);
 
+  // Handle URL query parameters for deep linking (?auth=login, ?auth=signup, ?auth=personas, ?tab=docs)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const auth = params.get('auth');
+    if (auth && ['login', 'signup', 'personas'].includes(auth)) {
+      setAuthModalMode(auth);
+      setIsAuthModalOpen(true);
+    }
+    const tab = params.get('tab');
+    if (tab && ['home', 'demo', 'trust', 'docs'].includes(tab)) {
+      setActivePublicTab(tab);
+    }
+    const mode = params.get('mode');
+    if (mode === 'app' || params.get('demo') === 'true') {
+      handleLaunchDemoApp(params.get('appTab') || 'cockpit', params.get('finding'));
+    }
+  }, []);
+
   const [findings, setFindings] = useState([]);
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [selectedEnv, setSelectedEnv] = useState('staging');
@@ -223,6 +241,30 @@ export default function App() {
     setActiveProofRecord(sampleRecord);
   };
 
+  // 1-Click Instant Demo App Launcher: logs in as Security Lead (Sarah Chen) and unlocks all interactive capabilities
+  const handleLaunchDemoApp = (initialTab = 'cockpit', findingId = null) => {
+    if (!currentUser) {
+      setCurrentUser({
+        id: 'usr-lead',
+        name: 'Sarah Chen',
+        email: 'sarah.chen@acme.internal',
+        role: 'SECURITY_LEAD',
+        organizationId: 'org-acme'
+      });
+      setCurrentOrg({
+        id: 'org-acme',
+        name: 'Acme Corporation',
+        tier: 'ENTERPRISE'
+      });
+    }
+    if (findingId && findings.length > 0) {
+      const f = findings.find(item => item.id === findingId) || findings[0];
+      setSelectedFinding(f);
+    }
+    setActiveAppTab(initialTab);
+    setViewMode('app');
+  };
+
   return (
     <div className="app-container">
       {/* Dynamic Navigation Bar: Public vs Authenticated App */}
@@ -236,6 +278,7 @@ export default function App() {
         findings={findings}
         currentUser={currentUser}
         currentOrg={currentOrg}
+        onExploreDemo={() => handleLaunchDemoApp('cockpit')}
         onOpenImport={() => setIsImportOpen(true)}
         onOpenAuditTrail={() => setIsAuditTrailOpen(true)}
         onOpenTeamSettings={() => setIsTeamSettingsOpen(true)}
@@ -268,7 +311,8 @@ export default function App() {
         <div className="public-view-wrapper">
           {activePublicTab === 'home' && (
             <PublicLandingPage 
-              onExploreDemo={() => setActivePublicTab('demo')}
+              onExploreDemo={() => handleLaunchDemoApp('cockpit')}
+              onLaunchScenario={(findingId) => handleLaunchDemoApp('sandbox', findingId)}
               onOpenAuth={(initialMode) => {
                 setAuthModalMode(initialMode);
                 setIsAuthModalOpen(true);

@@ -26,8 +26,9 @@ export default function Navbar({
   findings = [], 
   currentUser,
   currentOrg,
+  onExploreDemo,
   onOpenImport, 
-  onOpenAuditTrail,
+  onOpenAuditTrail, 
   onOpenTeamSettings,
   onOpenAuthModal,
   onOpenPersonaSwitcher,
@@ -61,7 +62,8 @@ export default function Navbar({
             </button>
             <button 
               className={`nav-link-item ${activePublicTab === 'demo' ? 'active' : ''}`}
-              onClick={() => setActivePublicTab('demo')}
+              onClick={() => onExploreDemo ? onExploreDemo() : setActivePublicTab('demo')}
+              id="nav-interactive-demo-btn"
             >
               <Terminal size={14} />
               <span>Interactive Demo</span>

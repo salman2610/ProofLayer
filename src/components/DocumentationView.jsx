@@ -155,6 +155,36 @@ curl -X POST http://localhost:3001/api/findings \\
           </pre>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="clean-footer" style={{ marginTop: '60px' }}>
+        <div className="w footer-bottom-bar">
+          <div className="footer-copyright">
+            © 2026 ProofLayer Inc. Cryptographic Remediation Verification Engine.
+          </div>
+          <div className="designer-credit-badge">
+            <span>Made & designed with passion by </span>
+            <a 
+              href="https://github.com/salman2610" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="designer-link"
+              title="View Salman's GitHub & Portfolio"
+            >
+              Salman (@salman2610)
+            </a>
+            <span className="dot-sep">•</span>
+            <a 
+              href="https://github.com/salman2610" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="portfolio-link"
+            >
+              Portfolio ↗
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
