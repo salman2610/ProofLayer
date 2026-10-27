@@ -938,57 +938,23 @@ MCowBQYDK2VwAyEA11Tm6/RPwhX/enmdYFkfndpwOwIfPowRrLCT6pk8JUo=
         </div>
       </section>
 
-      {/* 10. FOOTER WITH LOGO, CREDITS & PORTFOLIO */}
-      <footer className="clean-footer">
-        <div className="w footer-layout">
-          <div className="footer-brand-side">
-            <img 
-              src="/prooflayer-logo-full.png" 
-              alt="ProofLayer — Verify, Validate, Prove" 
-              className="footer-logo-img" 
-            />
-            <p className="footer-tagline-text">
-              The independent system of record that proves security remediations actually worked.
-            </p>
+      {/* 10. SLEEK MINIMALIST APPLE FOOTER (MATCHING ORIGINAL DESIGN) */}
+      <footer className="prooflayer-minimal-footer">
+        <div className="w minimal-footer-inner">
+          <div className="footer-left-col">
+            <span className="footer-copy">© 2026 ProofLayer</span>
+            <span className="dot-sep">•</span>
+            <span className="footer-tagline">Prove the fix, don’t trust the ticket.</span>
           </div>
 
-          <div className="footer-links-group">
-            <div className="footer-col">
-              <h4>Product</h4>
-              <button className="footer-link-btn" onClick={onExploreDemo}>Launch Live Demo</button>
-              <button className="footer-link-btn" onClick={onOpenSampleProof}>Sample Certificate</button>
-              <a href="#access" className="footer-link-btn">Early Access</a>
-            </div>
-
-            <div className="footer-col">
-              <h4>Verification</h4>
-              <button className="footer-link-btn" onClick={() => onNavigateTab('trust')}>Trust & Security</button>
-              <button className="footer-link-btn" onClick={() => onNavigateTab('docs')}>CLI & API Docs</button>
-            </div>
-
-            <div className="footer-col">
-              <h4>Account</h4>
-              <button className="footer-link-btn" onClick={() => onOpenAuth('login')}>Sign in</button>
-              <button className="footer-link-btn" onClick={() => onOpenAuth('signup')}>Create Account</button>
-              <button className="footer-link-btn" onClick={() => onOpenAuth('personas')}>Demo Personas</button>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM BAR WITH MADE & DESIGNED BY + PORTFOLIO LINK */}
-        <div className="w footer-bottom-bar">
-          <div className="footer-copyright">
-            © 2026 ProofLayer Inc. Cryptographic Remediation Verification Engine.
-          </div>
-
-          <div className="designer-credit-badge liquid-glass-badge">
-            <span>Made & designed with passion by </span>
+          <div className="footer-right-col">
+            <span className="footer-author">Made &amp; designed by</span>
             <a 
               href="https://salman2610.github.io" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="designer-link"
-              title="View P Salmanulfaris Portfolio"
+              title="P Salmanulfaris Portfolio"
             >
               P Salmanulfaris
             </a>
@@ -1009,12 +975,8 @@ MCowBQYDK2VwAyEA11Tm6/RPwhX/enmdYFkfndpwOwIfPowRrLCT6pk8JUo=
               className="github-issues-link"
               title="Report an issue or submit a pull request on GitHub"
             >
-              GitHub (Issues & PRs) ↗
+              GitHub (Issues &amp; PRs) ↗
             </a>
-          </div>
-
-          <div className="footer-crypto-spec">
-            RFC 8032 Ed25519 • RFC 8785 Canonical JSON • SHA-256 Merkle Provenance
           </div>
         </div>
       </footer>

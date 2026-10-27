@@ -961,50 +961,6 @@ body::before {
   }
 }
 
-/* Authenticated Liquid Glass Bottom Footer */
-.app-liquid-footer {
-  margin-top: auto;
-  background: rgba(18, 7, 24, 0.75);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 16px 0;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-.app-footer-inner {
-  max-width: 1600px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.app-footer-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.crypto-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #4ade80;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font: 600 11.5px var(--m);
-  letter-spacing: 0.02em;
-}
-
-.app-footer-dim {
-  color: var(--mute);
-  font: 500 12.5px var(--f);
-}
-
 /* ==========================================================================
    PUBLIC LANDING PAGE (HTML DESIGN REPLICA)
    ========================================================================== */
@@ -1646,131 +1602,75 @@ body::before {
   margin-bottom: 12px;
 }
 
-/* 8. Clean Footer with Designer Portfolio Credits */
-.clean-footer {
+/* Sleek Minimalist Apple Footer (Matches Original HTML Template) */
+.prooflayer-minimal-footer {
   border-top: 1px solid var(--line);
-  padding: 60px 0 36px;
-  background: #10061A;
+  padding: 32px 0 44px;
+  background: transparent;
+  position: relative;
+  z-index: 10;
 }
 
-.footer-layout {
-  display: flex;
-  justify-content: space-between;
-  gap: 48px;
-  flex-wrap: wrap;
-  margin-bottom: 40px;
-}
-
-.footer-brand-side {
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.footer-logo-img {
-  height: 48px;
-  width: auto;
-  object-fit: contain;
-  align-self: flex-start;
-}
-
-.footer-tagline-text {
-  color: var(--mute);
-  font-size: 15px;
-  line-height: 1.55;
-  margin: 0;
-}
-
-.footer-links-group {
-  display: flex;
-  gap: 56px;
-  flex-wrap: wrap;
-}
-
-.footer-col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.footer-col h4 {
-  font: 700 14px var(--m);
-  color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 4px;
-}
-
-.footer-link-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  text-align: left;
-  color: var(--mute);
-  font: 500 15px var(--f);
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.footer-link-btn:hover {
-  color: var(--ok);
-}
-
-/* BOTTOM BAR WITH EXPLICIT MADE & DESIGNED BY CREDIT + PORTFOLIO */
-.footer-bottom-bar {
-  border-top: 1px solid rgba(74, 42, 92, 0.5);
-  padding-top: 24px;
+.minimal-footer-inner {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--mute);
 }
 
-.designer-credit-badge {
-  display: inline-flex;
+.footer-left-col,
+.footer-right-col {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 111, 163, 0.08);
-  border: 1px solid rgba(255, 111, 163, 0.3);
-  padding: 6px 14px;
-  border-radius: 99px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.footer-copy {
+  font-weight: 600;
   color: var(--text);
-  font-weight: 500;
+}
+
+.footer-tagline {
+  color: var(--mute);
+}
+
+.footer-author {
+  color: var(--mute);
 }
 
 .designer-link {
   color: var(--brand);
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 600;
+  transition: color 0.2s;
 }
 
 .designer-link:hover {
-  text-decoration: underline;
   color: #fff;
+  text-decoration: underline;
 }
 
-.portfolio-link {
+.portfolio-link,
+.github-issues-link {
   color: var(--ok);
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 500;
+  transition: color 0.2s;
 }
 
-.portfolio-link:hover {
+.portfolio-link:hover,
+.github-issues-link:hover {
+  color: #fff;
   text-decoration: underline;
 }
 
 .dot-sep {
-  color: var(--mute);
-}
-
-.footer-crypto-spec {
-  font: 500 12px var(--m);
-  color: var(--mute);
+  opacity: 0.35;
+  font-size: 11px;
 }
 
 @media (max-width: 900px) {

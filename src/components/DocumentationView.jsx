@@ -156,20 +156,23 @@ curl -X POST http://localhost:3001/api/findings \\
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="clean-footer" style={{ marginTop: '60px' }}>
-        <div className="w footer-bottom-bar">
-          <div className="footer-copyright">
-            © 2026 ProofLayer Inc. Cryptographic Remediation Verification Engine.
+      {/* Sleek Minimalist Apple Footer */}
+      <footer className="prooflayer-minimal-footer" style={{ marginTop: '72px' }}>
+        <div className="w minimal-footer-inner">
+          <div className="footer-left-col">
+            <span className="footer-copy">© 2026 ProofLayer</span>
+            <span className="dot-sep">•</span>
+            <span className="footer-tagline">Prove the fix, don’t trust the ticket.</span>
           </div>
-          <div className="designer-credit-badge liquid-glass-badge">
-            <span>Made & designed with passion by </span>
+
+          <div className="footer-right-col">
+            <span className="footer-author">Made &amp; designed by</span>
             <a 
               href="https://salman2610.github.io" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="designer-link"
-              title="View P Salmanulfaris Portfolio"
+              title="P Salmanulfaris Portfolio"
             >
               P Salmanulfaris
             </a>
@@ -190,7 +193,7 @@ curl -X POST http://localhost:3001/api/findings \\
               className="github-issues-link"
               title="Report an issue or submit a pull request on GitHub"
             >
-              GitHub (Issues & PRs) ↗
+              GitHub (Issues &amp; PRs) ↗
             </a>
           </div>
         </div>
