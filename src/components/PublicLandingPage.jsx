@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Fingerprint,
   RefreshCw,
+  RotateCcw,
   Server
 } from 'lucide-react';
 
