@@ -47,7 +47,8 @@ try {
   const result = verifyProofRecordIntegrity(record);
 
   console.log(`[${result.checks.rootDigestMatch ? 'PASS' : 'FAIL'}] Root Proof Digest Match`);
-  console.log(`[${result.checks.sealSignatureMatch ? 'PASS' : 'FAIL'}] HMAC Cryptographic Seal Valid`);
+  console.log(`[${result.checks.ed25519SignatureMatch ? 'PASS' : 'FAIL'}] Ed25519 Digital Signature Valid (Key: ${result.keyId || 'N/A'})`);
+  console.log(`[${result.checks.keyNotRevoked ? 'PASS' : 'FAIL'}] Key Status: ACTIVE & Trusted`);
   console.log(`[${result.checks.baselineIntegrity ? 'PASS' : 'FAIL'}] Baseline Exploit Evidence Hash Match`);
   console.log(`[${result.checks.retestIntegrity ? 'PASS' : 'FAIL'}] Retest Execution Evidence Hash Match`);
   console.log(`[${result.checks.invariantsIntegrity ? 'PASS' : 'FAIL'}] Invariant Assertions Hash Match`);

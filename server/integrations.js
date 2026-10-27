@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { redactEvidence } from './redaction.js';
 import { logAuditEvent, findingsStore } from './store.js';
 import { runScopedRetest } from './executor.js';
@@ -175,12 +176,95 @@ export function parseBurpWithProvenance(burpItem) {
   return finding;
 }
 
+const WEBHOOK_HMAC_SECRET = process.env.PROOF_WEBHOOK_SECRET || 'prooflayer_webhook_hmac_secret_2026';
+const MAX_EVENT_AGE_MS = 5 * 60 * 1000; // 5 minutes max freshness window
+const seenDeliveryIds = new Set(); // Replay protection cache
+
+/**
+ * Validates cryptographic webhook signature, timestamp freshness, and delivery replay defense
+ */
+export function verifyWebhookSecurity(headers = {}, rawBody = '', options = {}) {
+  const { skipSignatureInDev = false } = options;
+
+  // 1. Replay Defense: Check Delivery ID
+  const deliveryId = headers['x-github-delivery'] || headers['x-delivery-id'] || headers['x-atlassian-webhook-id'];
+  if (deliveryId) {
+    if (seenDeliveryIds.has(deliveryId)) {
+      return {
+        valid: false,
+        error: 'REPLAY_ATTACK_DETECTED: Webhook delivery ID was already processed. Duplicate event rejected.',
+        code: 'REPLAY_REJECTED'
+      };
+    }
+    seenDeliveryIds.add(deliveryId);
+    if (seenDeliveryIds.size > 10000) {
+      const first = seenDeliveryIds.values().next().value;
+      seenDeliveryIds.delete(first);
+    }
+  }
+
+  // 2. Timestamp Freshness
+  const eventTimestampHeader = headers['x-prooflayer-timestamp'] || headers['x-event-time'];
+  if (eventTimestampHeader) {
+    const eventTime = new Date(eventTimestampHeader).getTime();
+    if (!isNaN(eventTime)) {
+      const age = Math.abs(Date.now() - eventTime);
+      if (age > MAX_EVENT_AGE_MS) {
+        return {
+          valid: false,
+          error: `STALE_EVENT_REJECTED: Webhook timestamp (${eventTimestampHeader}) is older than 5 minutes (${Math.round(age/1000)}s old). Potential replay attack.`,
+          code: 'STALE_TIMESTAMP'
+        };
+      }
+    }
+  }
+
+  // 3. HMAC-SHA256 Signature Verification
+  const signatureHeader = headers['x-hub-signature-256'] || headers['x-signature-sha256'];
+  if (signatureHeader) {
+    const expectedSignature = 'sha256=' + crypto
+      .createHmac('sha256', WEBHOOK_HMAC_SECRET)
+      .update(typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody))
+      .digest('hex');
+
+    const sigBuffer = Buffer.from(signatureHeader, 'utf8');
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+
+    if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
+      return {
+        valid: false,
+        error: 'FORGED_WEBHOOK_REJECTED: X-Hub-Signature-256 did not match expected HMAC digest. Unauthorized request.',
+        code: 'INVALID_SIGNATURE'
+      };
+    }
+  } else if (!skipSignatureInDev && process.env.NODE_ENV === 'production') {
+    return {
+      valid: false,
+      error: 'SIGNATURE_REQUIRED: Missing X-Hub-Signature-256 header in production webhook request.',
+      code: 'MISSING_SIGNATURE'
+    };
+  }
+
+  return { valid: true };
+}
+
 /**
  * Handle incoming GitHub / Jira Webhook Event
  * e.g. Developer comments: `/prooflayer retest --target staging`
  * or Jira ticket transitions to `Ready for Retest`.
  */
-export async function handleVCSWebhook(platform, payload, serverBaseUrl) {
+export async function handleVCSWebhook(platform, payload, serverBaseUrl, headers = {}) {
+  // 1. Verify Webhook Security & Replay Protections
+  const secCheck = verifyWebhookSecurity(headers, payload, { skipSignatureInDev: !headers['x-hub-signature-256'] });
+  if (!secCheck.valid) {
+    logAuditEvent('WEBHOOK_SECURITY_REJECTED', `Webhook security check failed: ${secCheck.error}`);
+    return {
+      success: false,
+      error: secCheck.error,
+      code: secCheck.code
+    };
+  }
+
   let findingId = null;
   let actionRequested = 'RETEST';
   let actor = 'External Developer';

@@ -2,78 +2,14 @@ import { redactEvidence } from './redaction.js';
 import { evaluateInvariants } from './invariants.js';
 import { generateBypassPermutations } from './permutations.js';
 import { validateRetestScope } from './scopeGuard.js';
+import { safeExecuteProbe } from './safeClient.js';
 import { logAuditEvent } from './store.js';
 
 /**
  * ProofLayer Hardened Retest Execution Engine
- * Enforces scope authorization, executes probe requests, evaluates deterministic invariants,
- * tests regression permutations, and computes unambiguous verdicts and confidence explanations.
+ * Enforces scope authorization, executes probe requests via hardened client (redirect & DNS pinned),
+ * evaluates deterministic invariants, tests regression permutations, and computes unambiguous verdicts.
  */
-
-/**
- * Execute a single HTTP request against local sandbox or authorized target
- */
-async function executeHttpRequest(serverBaseUrl, requestSpec) {
-  const start = Date.now();
-  
-  let fullUrl = requestSpec.url;
-  if (fullUrl.startsWith('/')) {
-    fullUrl = `${serverBaseUrl}${fullUrl}`;
-  } else if (!fullUrl.startsWith('http')) {
-    fullUrl = `${serverBaseUrl}/${fullUrl}`;
-  }
-
-  const options = {
-    method: requestSpec.method || 'GET',
-    headers: {
-      'User-Agent': 'ProofLayer-VerificationEngine/1.4 (Authorized-Retest)',
-      ...(requestSpec.headers || {})
-    }
-  };
-
-  if (requestSpec.body && ['POST', 'PUT', 'PATCH'].includes(options.method)) {
-    if (typeof requestSpec.body === 'object') {
-      options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
-      options.body = JSON.stringify(requestSpec.body);
-    } else {
-      options.body = String(requestSpec.body);
-    }
-  }
-
-  try {
-    const res = await fetch(fullUrl, options);
-    const durationMs = Date.now() - start;
-    
-    const resHeaders = {};
-    res.headers.forEach((val, key) => {
-      resHeaders[key] = val;
-    });
-
-    const text = await res.text();
-    let parsedBody;
-    try {
-      parsedBody = JSON.parse(text);
-    } catch (e) {
-      parsedBody = text;
-    }
-
-    return {
-      status: res.status,
-      statusText: res.statusText,
-      durationMs,
-      headers: resHeaders,
-      body: parsedBody
-    };
-  } catch (err) {
-    return {
-      status: 0,
-      statusText: 'CONNECTION_REFUSED',
-      durationMs: Date.now() - start,
-      headers: {},
-      body: { error: 'Target connection failed', details: err.message }
-    };
-  }
-}
 
 /**
  * Runs full retest: baseline re-execution + invariant check + regression/bypass permutation matrix
@@ -87,10 +23,12 @@ export async function runScopedRetest(finding, serverBaseUrl, options = {}) {
     headers: {}
   };
 
+  const isLabSandbox = Boolean(finding.sandboxScenarioId || baselineReq.url.startsWith('/api/sandbox'));
+
   // 1. Strict Scope & SSRF Authorization Guard
   const scopeCheck = await validateRetestScope(baselineReq.url, {
     environmentTier: finding.environmentTier || 'staging',
-    allowLabSandbox: Boolean(finding.sandboxScenarioId || baselineReq.url.startsWith('/api/sandbox')),
+    allowLabSandbox: isLabSandbox,
     productionAuthToken: options.productionAuthToken,
     method: baselineReq.method
   });
@@ -100,8 +38,12 @@ export async function runScopedRetest(finding, serverBaseUrl, options = {}) {
     throw new Error(`Scope Guard Blocked: ${scopeCheck.reason}`);
   }
 
-  // 2. Execute Primary Retest Request
-  const rawResponse = await executeHttpRequest(serverBaseUrl, baselineReq);
+  // 2. Execute Primary Retest Request via Safe Client (with redirect revalidation)
+  const rawResponse = await safeExecuteProbe(serverBaseUrl, baselineReq, {
+    environmentTier: finding.environmentTier || 'staging',
+    allowLabSandbox: isLabSandbox,
+    productionAuthToken: options.productionAuthToken
+  });
   const retestEvidence = redactEvidence({
     timestamp: new Date().toISOString(),
     request: baselineReq,
@@ -146,7 +88,11 @@ export async function runScopedRetest(finding, serverBaseUrl, options = {}) {
   const successfulBypasses = [];
 
   for (const perm of permutations) {
-    const permRawRes = await executeHttpRequest(serverBaseUrl, perm.request);
+    const permRawRes = await safeExecuteProbe(serverBaseUrl, perm.request, {
+      environmentTier: finding.environmentTier || 'staging',
+      allowLabSandbox: isLabSandbox,
+      productionAuthToken: options.productionAuthToken
+    });
     const permEvidence = redactEvidence({
       request: perm.request,
       response: permRawRes

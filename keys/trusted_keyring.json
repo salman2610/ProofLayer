@@ -1,0 +1,18 @@
+{
+  "pl-ed25519-2026-k1": {
+    "keyId": "pl-ed25519-2026-k1",
+    "algorithm": "Ed25519",
+    "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAueER8Lh80BgBDAd0usSfp4D/sp1ZdQjj0o2eeGLTxxY=\n-----END PUBLIC KEY-----\n",
+    "createdAt": "2026-10-27T00:00:00.000Z",
+    "status": "ACTIVE"
+  },
+  "pl-ed25519-temp-test-key": {
+    "keyId": "pl-ed25519-temp-test-key",
+    "algorithm": "Ed25519",
+    "publicKey": "",
+    "createdAt": "2026-10-27T07:02:42.869Z",
+    "status": "REVOKED",
+    "revokedAt": "2026-10-27T07:02:42.869Z",
+    "revocationReason": "Emergency revocation due to key rotation"
+  }
+}

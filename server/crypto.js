@@ -1,16 +1,18 @@
 import crypto from 'crypto';
+import { getSigningPrivateKey, getPublicKey } from './keyManager.js';
 
 /**
- * ProofLayer Cryptographic Proof Record & Verification Engine
- * Produces audit-ready, tamper-evident cryptographic certificates of remediation.
+ * ProofLayer Asymmetric Cryptographic Proof Record & Verification Engine
  * 
  * DESIGN PRINCIPLE:
- * A signed certificate establishes record integrity, provenance, and non-repudiation;
- * it cannot by itself prove that a system is perpetually secure.
- * The underlying tests, invariants, and scope limitations must remain fully inspectable.
+ * Uses Ed25519 asymmetric digital signatures (RFC 8032) rather than shared-secret HMAC.
+ * ProofLayer signs records using a protected private key. External auditors, clients,
+ * and CI gates verify using the public key with zero knowledge of the signing secret.
+ * 
+ * A signed certificate establishes record integrity and provenance; it does not by
+ * itself guarantee security beyond the inspectable assertions and scope recorded.
  */
 
-const SYSTEM_PROOF_SECRET = process.env.PROOF_SIGNING_SECRET || 'prooflayer_master_remediation_seal_2026_key';
 const TEST_SUITE_VERSION = 'ProofLayer-TestSuite/v1.4.2-hardened';
 
 // Deterministic canonical JSON stringifier (RFC 8785 inspired) to guarantee bitwise reproducibility
@@ -32,7 +34,7 @@ export function sha256(content) {
 }
 
 /**
- * Creates a cryptographically sealed Proof Record for an evaluated finding
+ * Creates an Asymmetrically Signed Proof Record using Ed25519
  */
 export function generateProofRecord({
   findingId,
@@ -54,6 +56,7 @@ export function generateProofRecord({
   notes = ''
 }) {
   const timestamp = new Date().toISOString();
+  const { keyId, privateKey } = getSigningPrivateKey();
 
   // 1. Compute discrete hashes for each evidence tier
   const baselineHash = sha256(baselineEvidence || {});
@@ -79,11 +82,12 @@ export function generateProofRecord({
 
   const rootProofDigest = crypto.createHash('sha256').update(compositeProofString).digest('hex');
 
-  // 3. Generate HMAC cryptographic seal
-  const cryptographicSeal = crypto
-    .createHmac('sha256', SYSTEM_PROOF_SECRET)
-    .update(rootProofDigest)
-    .digest('hex');
+  // 3. Generate Ed25519 Digital Signature (Asymmetric cryptography)
+  const digitalSignature = crypto.sign(
+    null,
+    Buffer.from(rootProofDigest, 'utf8'),
+    privateKey
+  ).toString('base64');
 
   const recordId = `PL-PROOF-${findingId.toUpperCase()}-${rootProofDigest.slice(0, 8).toUpperCase()}`;
 
@@ -134,8 +138,9 @@ export function generateProofRecord({
     },
     integrity: {
       rootProofDigest,
-      cryptographicSeal,
-      signatureAlgorithm: 'HMAC-SHA256-PROOF-SEAL',
+      signatureAlgorithm: 'Ed25519',
+      keyId,
+      digitalSignature, // Base64 Ed25519 signature
       evidenceHashes: {
         baselineHash,
         retestHash,
@@ -156,9 +161,9 @@ export function generateProofRecord({
 }
 
 /**
- * Validates the cryptographic integrity of an existing Proof Record
+ * Validates the cryptographic integrity of an existing Proof Record using public key
  */
-export function verifyProofRecordIntegrity(proofRecord) {
+export function verifyProofRecordIntegrity(proofRecord, overridePublicKey = null) {
   try {
     const { 
       integrity, 
@@ -174,13 +179,36 @@ export function verifyProofRecordIntegrity(proofRecord) {
       testSuiteVersion = TEST_SUITE_VERSION
     } = proofRecord;
     
-    // Recompute hashes
+    // 1. Resolve Public Key
+    const keyId = integrity.keyId || 'pl-ed25519-2026-k1';
+    const keyEntry = overridePublicKey ? { publicKey: overridePublicKey, status: 'ACTIVE' } : getPublicKey(keyId);
+
+    if (!keyEntry) {
+      return {
+        isValid: false,
+        tamperDetected: true,
+        error: `Unknown or untrusted signing key ID "${keyId}"`,
+        checks: { keyTrusted: false }
+      };
+    }
+
+    if (keyEntry.status === 'REVOKED') {
+      return {
+        isValid: false,
+        tamperDetected: true,
+        error: `Signing key "${keyId}" was REVOKED (${keyEntry.revocationReason || 'Revoked by key administrator'})`,
+        checks: { keyNotRevoked: false }
+      };
+    }
+
+    // 2. Recompute Evidence Hashes
     const baselineHash = sha256(evidence.baseline || {});
     const retestHash = sha256(evidence.retest || {});
     const invariantsHash = sha256(evidence.invariants || {});
     const regressionHash = sha256(evidence.regressionMatrix || []);
     const findingMetadataHash = sha256({ findingId, title, cwe, severity });
 
+    // 3. Recompute Canonical Root Digest
     const compositeProofString = [
       findingMetadataHash,
       baselineHash,
@@ -196,17 +224,27 @@ export function verifyProofRecordIntegrity(proofRecord) {
     ].join('::');
 
     const expectedRoot = crypto.createHash('sha256').update(compositeProofString).digest('hex');
-    const expectedSeal = crypto.createHmac('sha256', SYSTEM_PROOF_SECRET).update(expectedRoot).digest('hex');
-
     const digestMatches = expectedRoot === integrity.rootProofDigest;
-    const sealMatches = expectedSeal === integrity.cryptographicSeal;
+
+    // 4. Verify Ed25519 Digital Signature with Public Key
+    let signatureMatches = false;
+    try {
+      signatureMatches = crypto.verify(
+        null,
+        Buffer.from(integrity.rootProofDigest, 'utf8'),
+        keyEntry.publicKey,
+        Buffer.from(integrity.digitalSignature, 'base64')
+      );
+    } catch (sigErr) {
+      signatureMatches = false;
+    }
 
     const baselineMatches = baselineHash === integrity.evidenceHashes.baselineHash;
     const retestMatches = retestHash === integrity.evidenceHashes.retestHash;
     const invariantsMatches = invariantsHash === integrity.evidenceHashes.invariantsHash;
     const regressionMatches = regressionHash === integrity.evidenceHashes.regressionHash;
 
-    const isValid = digestMatches && sealMatches && baselineMatches && retestMatches && invariantsMatches && regressionMatches;
+    const isValid = digestMatches && signatureMatches && baselineMatches && retestMatches && invariantsMatches && regressionMatches;
 
     return {
       isValid,
@@ -214,16 +252,19 @@ export function verifyProofRecordIntegrity(proofRecord) {
       recordId: proofRecord.recordId,
       findingId: proofRecord.findingId,
       verdict: proofRecord.verdict,
+      keyId,
       checks: {
+        keyTrusted: true,
+        keyNotRevoked: keyEntry.status === 'ACTIVE',
         rootDigestMatch: digestMatches,
-        sealSignatureMatch: sealMatches,
+        ed25519SignatureMatch: signatureMatches,
         baselineIntegrity: baselineMatches,
         retestIntegrity: retestMatches,
         invariantsIntegrity: invariantsMatches,
         regressionIntegrity: regressionMatches
       },
       auditSummary: isValid 
-        ? `Proof record ${proofRecord.recordId} is CRYPTOGRAPHICALLY VALID and authentic. Evidence hashes match exactly.`
+        ? `Proof record ${proofRecord.recordId} is CRYPTOGRAPHICALLY VALID and authentic (Signed with Ed25519 key: ${keyId}).`
         : `SECURITY ALERT: Proof record ${proofRecord.recordId} has been TAMPERED WITH or modified!`
     };
   } catch (err) {

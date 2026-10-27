@@ -162,7 +162,7 @@ app.post('/api/integrations/webhook/:platform', async (req, res) => {
   const serverBaseUrl = `http://localhost:${PORT}`;
 
   try {
-    const result = await handleVCSWebhook(platform, req.body, serverBaseUrl);
+    const result = await handleVCSWebhook(platform, req.body, serverBaseUrl, req.headers);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Webhook processing failed', details: err.message });
