@@ -13,7 +13,7 @@
       "publicKey": "",
       "createdAt": "2026-10-27T07:02:42.869Z",
       "status": "REVOKED",
-      "revokedAt": "2026-10-27T07:43:26.411Z",
+      "revokedAt": "2026-10-27T07:54:03.764Z",
       "revocationReason": "Emergency revocation due to key rotation"
     },
     "pl-ed25519-rotation-test": {

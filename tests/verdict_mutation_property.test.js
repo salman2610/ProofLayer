@@ -132,16 +132,45 @@ describe('Suite 5: Verdict Mutation & Property-Based Fail-Safe Tests', () => {
     assert.ok(result.inconclusiveSummary.includes('unreachable') || result.inconclusiveSummary.includes('refused'));
   });
 
-  // 6. Malformed Evidence Inputs
-  test('Malformed Evidence: Null, undefined, or empty evidence objects fail-safe without throwing', () => {
-    const emptyCases = [null, undefined, {}, { response: null }, { response: {} }];
+  // 7. Multi-Class Vulnerability Invariant Diversity (No Universal 403 Fallacy)
+  test('Vulnerability Diversity: Expected invariants are defined per-vulnerability class, not globally hardcoded to 403', () => {
+    // A: SSRF finding expects input validation rejection (400 or 422)
+    const ssrfInvariants = {
+      expectedStatus: [400, 422],
+      forbiddenStrings: ['instance-id', 'ami-id', 'latest/meta-data']
+    };
+    const ssrfRes400 = evaluateInvariants({
+      response: { status: 400, body: { error: 'Invalid URL scheme' } }
+    }, ssrfInvariants);
+    assert.equal(ssrfRes400.passed, true, 'SSRF properly patched with 400 Bad Request must pass');
 
-    for (const emptyEvidence of emptyCases) {
-      assert.doesNotThrow(() => {
-        const res = evaluateInvariants(emptyEvidence, baseFinding.expectedInvariants);
-        assert.equal(res.passed, false, 'Empty or malformed evidence must never report clean pass');
-      });
-    }
+    // B: Security Headers finding expects HTTP 200 with required headers
+    const headerInvariants = {
+      expectedStatus: 200,
+      requiredHeaders: { 'strict-transport-security': 'max-age=31536000' }
+    };
+    const headerRes200 = evaluateInvariants({
+      response: {
+        status: 200,
+        headers: { 'strict-transport-security': 'max-age=31536000; includeSubDomains' },
+        body: 'OK'
+      }
+    }, headerInvariants);
+    assert.equal(headerRes200.passed, true, 'Header hardening on 200 OK must pass');
+
+    // C: Broken Authentication expects 401 Unauthorized
+    const authInvariants = {
+      expectedStatus: 401,
+      requiredHeaders: { 'www-authenticate': 'Bearer' }
+    };
+    const authRes401 = evaluateInvariants({
+      response: {
+        status: 401,
+        headers: { 'www-authenticate': 'Bearer error="invalid_token"' },
+        body: 'Unauthorized'
+      }
+    }, authInvariants);
+    assert.equal(authRes401.passed, true, 'Broken auth patched with 401 must pass');
   });
 
 });

@@ -15,14 +15,29 @@ import fs from 'fs';
 import path from 'path';
 import { verifyProofRecordIntegrity } from '../server/crypto.js';
 
-const filePath = process.argv[2];
+const args = process.argv.slice(2);
+let filePath = null;
+let keyPath = null;
 
-if (!filePath || filePath === '--help' || filePath === '-h') {
-  console.log('\nUsage: node bin/verify-proof.js <path-to-proof-record.json>');
-  console.log('       npm run verify -- <path-to-proof-record.json>\n');
-  console.log('Options:');
-  console.log('  --help, -h    Show this help message\n');
-  process.exit(filePath ? 0 : 1);
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--help' || args[i] === '-h') {
+    console.log('\nUsage: node bin/verify-proof.js <path-to-proof-record.json> [--key <path-to-public-key.pem>]');
+    console.log('       npm run verify -- <path-to-proof-record.json> [--key <path-to-public-key.pem>]\n');
+    console.log('Options:');
+    console.log('  --key, -k <path>  Path to auditor-trusted Ed25519 public key PEM (bypasses local keyring)');
+    console.log('  --help, -h        Show this help message\n');
+    process.exit(0);
+  } else if ((args[i] === '--key' || args[i] === '-k') && args[i + 1]) {
+    keyPath = args[i + 1];
+    i++;
+  } else if (!filePath && !args[i].startsWith('-')) {
+    filePath = args[i];
+  }
+}
+
+if (!filePath) {
+  console.error('\nUsage: node bin/verify-proof.js <path-to-proof-record.json> [--key <path-to-public-key.pem>]\n');
+  process.exit(1);
 }
 
 try {
@@ -30,6 +45,16 @@ try {
   if (!fs.existsSync(fullPath)) {
     console.error(`\n[ERROR] File not found: ${fullPath}\n`);
     process.exit(1);
+  }
+
+  let overridePublicKey = null;
+  if (keyPath) {
+    const fullKeyPath = path.resolve(process.cwd(), keyPath);
+    if (!fs.existsSync(fullKeyPath)) {
+      console.error(`\n[ERROR] Auditor public key file not found: ${fullKeyPath}\n`);
+      process.exit(1);
+    }
+    overridePublicKey = fs.readFileSync(fullKeyPath, 'utf8');
   }
 
   const raw = fs.readFileSync(fullPath, 'utf8');
@@ -44,10 +69,15 @@ try {
   console.log(`Verdict:         ${record.verdict} (${record.verdictTitle || ''})`);
   console.log(`Issued At:       ${record.issuedAt}`);
   console.log(`Signer:          ${record.reviewer?.name} <${record.reviewer?.email}>`);
-  console.log(`Test Suite:      ${record.testSuiteVersion || 'N/A'}\n`);
+  console.log(`Test Suite:      ${record.testSuiteVersion || 'N/A'}`);
+  if (overridePublicKey) {
+    console.log(`Trust Mode:      INDEPENDENT AUDITOR PUBLIC KEY (${keyPath})\n`);
+  } else {
+    console.log(`Trust Mode:      LOCAL KEYRING (${record.integrity?.keyId || 'default'})\n`);
+  }
 
   console.log('--- Cryptographic Integrity Checks ---');
-  const result = verifyProofRecordIntegrity(record);
+  const result = verifyProofRecordIntegrity(record, overridePublicKey);
 
   console.log(`[${result.checks.rootDigestMatch ? 'PASS' : 'FAIL'}] Root Proof Digest Match`);
   console.log(`[${result.checks.ed25519SignatureMatch ? 'PASS' : 'FAIL'}] Ed25519 Digital Signature Valid (Key: ${result.keyId || 'N/A'})`);
