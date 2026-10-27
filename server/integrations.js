@@ -176,34 +176,31 @@ export function parseBurpWithProvenance(burpItem) {
   return finding;
 }
 
+import { recordDeliveryIdAtomic, isAuthorizedCommenter } from './webhookStore.js';
+
 const WEBHOOK_HMAC_SECRET = process.env.PROOF_WEBHOOK_SECRET || 'prooflayer_webhook_hmac_secret_2026';
 const MAX_EVENT_AGE_MS = 5 * 60 * 1000; // 5 minutes max freshness window
-const seenDeliveryIds = new Set(); // Replay protection cache
 
 /**
- * Validates cryptographic webhook signature, timestamp freshness, and delivery replay defense
+ * Validates cryptographic webhook signature, timestamp freshness, and durable delivery replay defense
  */
 export function verifyWebhookSecurity(headers = {}, rawBody = '', options = {}) {
   const { skipSignatureInDev = false } = options;
 
-  // 1. Replay Defense: Check Delivery ID
+  // 1. Durable Atomic Replay Defense: Check Delivery ID
   const deliveryId = headers['x-github-delivery'] || headers['x-delivery-id'] || headers['x-atlassian-webhook-id'];
   if (deliveryId) {
-    if (seenDeliveryIds.has(deliveryId)) {
+    const replayCheck = recordDeliveryIdAtomic(deliveryId);
+    if (replayCheck.isDuplicate) {
       return {
         valid: false,
         error: 'REPLAY_ATTACK_DETECTED: Webhook delivery ID was already processed. Duplicate event rejected.',
         code: 'REPLAY_REJECTED'
       };
     }
-    seenDeliveryIds.add(deliveryId);
-    if (seenDeliveryIds.size > 10000) {
-      const first = seenDeliveryIds.values().next().value;
-      seenDeliveryIds.delete(first);
-    }
   }
 
-  // 2. Timestamp Freshness
+  // 2. Timestamp Freshness Window (5 minutes)
   const eventTimestampHeader = headers['x-prooflayer-timestamp'] || headers['x-event-time'];
   if (eventTimestampHeader) {
     const eventTime = new Date(eventTimestampHeader).getTime();
@@ -219,7 +216,7 @@ export function verifyWebhookSecurity(headers = {}, rawBody = '', options = {}) 
     }
   }
 
-  // 3. HMAC-SHA256 Signature Verification
+  // 3. HMAC-SHA256 Signature Verification with constant-time equality
   const signatureHeader = headers['x-hub-signature-256'] || headers['x-signature-sha256'];
   if (signatureHeader) {
     const expectedSignature = 'sha256=' + crypto
@@ -230,7 +227,11 @@ export function verifyWebhookSecurity(headers = {}, rawBody = '', options = {}) 
     const sigBuffer = Buffer.from(signatureHeader, 'utf8');
     const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
 
-    if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
+    const lengthMatches = sigBuffer.length === expectedBuffer.length;
+    const compBuffer = lengthMatches ? sigBuffer : expectedBuffer;
+    const contentMatches = crypto.timingSafeEqual(compBuffer, expectedBuffer);
+
+    if (!lengthMatches || !contentMatches) {
       return {
         valid: false,
         error: 'FORGED_WEBHOOK_REJECTED: X-Hub-Signature-256 did not match expected HMAC digest. Unauthorized request.',
@@ -262,6 +263,17 @@ export async function handleVCSWebhook(platform, payload, serverBaseUrl, headers
       success: false,
       error: secCheck.error,
       code: secCheck.code
+    };
+  }
+
+  // 2. Verify Actor Role-Based Authorization (A valid signature must not authorize unprivileged commenters!)
+  const authCheck = isAuthorizedCommenter(payload);
+  if (!authCheck.authorized) {
+    logAuditEvent('WEBHOOK_UNAUTHORIZED_COMMENTER', authCheck.reason);
+    return {
+      success: false,
+      error: authCheck.reason,
+      code: 'UNAUTHORIZED_COMMENTER'
     };
   }
 
@@ -377,9 +389,9 @@ export async function handleVCSWebhook(platform, payload, serverBaseUrl, headers
 - **Confidence:** **${retestResult.conclusionConfidence.score}%** — _${retestResult.conclusionConfidence.explanation}_
 
 ${retestResult.verdict === 'VERIFIED_REMEDIATED' 
-  ? `> **🔒 Cryptographic Proof Record Issued:** \`${proof.recordId}\`  
-> **Root Proof Digest:** \`${proof.integrity.rootProofDigest}\`  
-> **HMAC Seal:** \`${proof.integrity.cryptographicSeal.slice(0, 32)}...\`  
+  ? `> **🔒 Cryptographic Proof Record Issued:** \`${proof?.recordId}\`  
+> **Root Proof Digest:** \`${proof?.integrity?.rootProofDigest}\`  
+> **Ed25519 Signature:** \`${(proof?.integrity?.digitalSignature || '').slice(0, 32)}...\`  
 > _Audit-ready certificate generated and sealed._`
   : `> ⚠️ **Action Required:** Fix did not pass all deterministic assertions or regression permutations. See ProofLayer dashboard for side-by-side evidence diffs.`
 }
@@ -387,6 +399,7 @@ ${retestResult.verdict === 'VERIFIED_REMEDIATED'
 
   return {
     success: true,
+    retestExecuted: true,
     findingId: finding.id,
     verdict: retestResult.verdict,
     verdictTitle: retestResult.verdictTitle,

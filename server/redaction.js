@@ -108,8 +108,11 @@ export function redactHeaders(headers = {}) {
 export function redactText(text = '') {
   if (typeof text !== 'string') return text;
 
-  // 1. Strip Terminal Injection Escapes
-  let redacted = stripAnsiEscapes(text);
+  // 1. Unicode Normalization (NFKC - converts full-width and compatibility characters)
+  const normalized = text.normalize('NFKC');
+
+  // 2. Strip Terminal Injection Escapes
+  let redacted = stripAnsiEscapes(normalized);
 
   // 2. Enforce Payload Bound
   if (redacted.length > MAX_EVIDENCE_BYTES) {
@@ -140,6 +143,13 @@ export function redactText(text = '') {
   // 8. Raw Base64-encoded JWT Token Detection (Starts with eyJhbGciOi or eyJraWQi)
   redacted = redacted.replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, (match) => {
     return `[REDACTED_RAW_JWT:sha256:${hashSecret(match)}]`;
+  });
+
+  // 9. Plaintext key-value secret disclosures in text (e.g. "password: xyz", "secret: abc", "token: 123")
+  redacted = redacted.replace(/\b(?<!REDACTED_)(?:password|secret|token|api_key|apiKey)\s*[:=]\s*([^\s,;"'}{]+)/gi, (match, secretVal) => {
+    if (secretVal.startsWith('[REDACTED') || secretVal.startsWith('sha256:')) return match;
+    const prefix = match.slice(0, match.indexOf(secretVal));
+    return `${prefix}[REDACTED_SECRET:sha256:${hashSecret(secretVal)}]`;
   });
 
   return redacted;

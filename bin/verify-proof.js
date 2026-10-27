@@ -17,9 +17,12 @@ import { verifyProofRecordIntegrity } from '../server/crypto.js';
 
 const filePath = process.argv[2];
 
-if (!filePath) {
-  console.error('\nUsage: node bin/verify-proof.js <path-to-proof-record.json>\n');
-  process.exit(1);
+if (!filePath || filePath === '--help' || filePath === '-h') {
+  console.log('\nUsage: node bin/verify-proof.js <path-to-proof-record.json>');
+  console.log('       npm run verify -- <path-to-proof-record.json>\n');
+  console.log('Options:');
+  console.log('  --help, -h    Show this help message\n');
+  process.exit(filePath ? 0 : 1);
 }
 
 try {

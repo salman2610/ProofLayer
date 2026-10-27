@@ -53,10 +53,12 @@ export function generateProofRecord({
   conclusionConfidence = {},
   reviewer = { name: 'SecOps Automated Verifier', role: 'AppSec Engineer', email: 'secops@prooflayer.internal' },
   testSuiteVersion = TEST_SUITE_VERSION,
-  notes = ''
+  notes = '',
+  issuedAt = null,
+  signingKeyOverride = null
 }) {
-  const timestamp = new Date().toISOString();
-  const { keyId, privateKey } = getSigningPrivateKey();
+  const timestamp = issuedAt || new Date().toISOString();
+  const { keyId, privateKey } = signingKeyOverride || getSigningPrivateKey();
 
   // 1. Compute discrete hashes for each evidence tier
   const baselineHash = sha256(baselineEvidence || {});
@@ -192,13 +194,35 @@ export function verifyProofRecordIntegrity(proofRecord, overridePublicKey = null
       };
     }
 
+    if (keyEntry.tampered) {
+      return {
+        isValid: false,
+        tamperDetected: true,
+        error: keyEntry.error || 'KEYRING_INTEGRITY_COMPROMISED: Local trusted keyring has been altered.',
+        checks: { keyringIntact: false, keyTrusted: false }
+      };
+    }
+
     if (keyEntry.status === 'REVOKED') {
       return {
         isValid: false,
         tamperDetected: true,
-        error: `Signing key "${keyId}" was REVOKED (${keyEntry.revocationReason || 'Revoked by key administrator'})`,
+        error: `Signing key "${keyId}" was REVOKED due to compromise: ${keyEntry.revocationReason || 'Revoked by key administrator'}. All records signed with this key are untrusted.`,
         checks: { keyNotRevoked: false }
       };
+    }
+
+    if (keyEntry.status === 'RETIRED') {
+      const issuedTime = new Date(issuedAt).getTime();
+      const retiredTime = new Date(keyEntry.retiredAt).getTime();
+      if (!isNaN(issuedTime) && !isNaN(retiredTime) && issuedTime > retiredTime) {
+        return {
+          isValid: false,
+          tamperDetected: true,
+          error: `Signing key "${keyId}" was RETIRED at ${keyEntry.retiredAt}. Proof issued after retirement is invalid.`,
+          checks: { keyNotRetiredAtIssuance: false }
+        };
+      }
     }
 
     // 2. Recompute Evidence Hashes
@@ -244,7 +268,10 @@ export function verifyProofRecordIntegrity(proofRecord, overridePublicKey = null
     const invariantsMatches = invariantsHash === integrity.evidenceHashes.invariantsHash;
     const regressionMatches = regressionHash === integrity.evidenceHashes.regressionHash;
 
-    const isValid = digestMatches && signatureMatches && baselineMatches && retestMatches && invariantsMatches && regressionMatches;
+    const expectedRecordId = `PL-PROOF-${findingId.toUpperCase()}-${integrity.rootProofDigest.slice(0, 8).toUpperCase()}`;
+    const recordIdMatches = proofRecord.recordId === expectedRecordId;
+
+    const isValid = digestMatches && signatureMatches && baselineMatches && retestMatches && invariantsMatches && regressionMatches && recordIdMatches;
 
     return {
       isValid,
@@ -255,7 +282,8 @@ export function verifyProofRecordIntegrity(proofRecord, overridePublicKey = null
       keyId,
       checks: {
         keyTrusted: true,
-        keyNotRevoked: keyEntry.status === 'ACTIVE',
+        keyNotRevoked: keyEntry.status !== 'REVOKED',
+        recordIdMatch: recordIdMatches,
         rootDigestMatch: digestMatches,
         ed25519SignatureMatch: signatureMatches,
         baselineIntegrity: baselineMatches,

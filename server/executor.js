@@ -54,7 +54,7 @@ export async function runScopedRetest(finding, serverBaseUrl, options = {}) {
   const invariantResult = evaluateInvariants(retestEvidence, finding.expectedInvariants);
 
   // If primary target is unreachable or crashed, mark as INCONCLUSIVE
-  if (invariantResult.isInconclusive && invariantResult.status === 0) {
+  if (rawResponse.status === 0 || rawResponse.statusText === 'CONNECTION_REFUSED') {
     return {
       retestEvidence,
       invariantResult,
@@ -163,7 +163,14 @@ export async function runScopedRetest(finding, serverBaseUrl, options = {}) {
   const totalPassed = invariantResult.passedCount + permutationsPassed;
   const overallCoverage = Math.round((totalPassed / (totalAssertions || 1)) * 100);
 
-  if (!invariantResult.passed) {
+  if (invariantResult.isInconclusive) {
+    verdict = 'INCONCLUSIVE';
+    verdictTitle = 'Retest Inconclusive (Server Crash / Target Unreachable)';
+    conclusionType = 'INCONCLUSIVE_DATA';
+    confidenceScore = 0;
+    verdictSummary = `Retest produced inconclusive evidence: ${(invariantResult.inconclusiveReasons || [invariantResult.inconclusiveSummary]).join('; ')}`;
+    confidenceExplanation = '0% confidence: Inconclusive responses (5xx crashes or connection drops) cannot verify remediation.';
+  } else if (!invariantResult.passed) {
     verdict = 'VULNERABILITY_PERSISTS';
     verdictTitle = 'Vulnerability Persists (Fix Ineffective)';
     conclusionType = 'CONFIRMATION_OF_VULNERABILITY';

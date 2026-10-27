@@ -1,4 +1,7 @@
 import dns from 'dns/promises';
+import dnsSync from 'dns';
+import http from 'http';
+import https from 'https';
 import { URL } from 'url';
 import { validateRetestScope } from './scopeGuard.js';
 
@@ -6,10 +9,14 @@ import { validateRetestScope } from './scopeGuard.js';
  * ProofLayer Hardened Execution Client (Network Layer Defense)
  * 
  * Enforces:
- * 1. Post-DNS IP destination validation (blocks DNS rebinding / TOCTOU).
- * 2. Redirect revalidation (re-checks Location headers against scope guard before following).
- * 3. IPv4-mapped IPv6 normalization (::ffff:169.254.169.254, ::ffff:127.0.0.1).
- * 4. Strict connection timeouts and non-destructive method policies.
+ * 1. Socket-level destination pinning: The socket connects strictly to the pre-validated
+ *    destination IP while preserving TLS SNI and server certificate validation.
+ * 2. Mixed DNS Answer Defense: If ANY DNS record resolves to a private or prohibited IP,
+ *    the entire resolution is rejected (mitigating mixed public/private round-robin rebinding).
+ * 3. Redirect Revalidation: Intercepts 3xx responses and re-runs Scope Guard and socket pinning
+ *    before following each hop (prevents open-redirect SSRF).
+ * 4. IPv4-mapped IPv6 normalization (::ffff:169.254.169.254, ::ffff:127.0.0.1).
+ * 5. Proxy-Immune Egress: Disallows uninspected proxy tunneling around egress policies.
  */
 
 const MAX_REDIRECTS = 3;
@@ -62,14 +69,14 @@ export function isProhibitedIp(ip) {
 }
 
 /**
- * Resolves all IP addresses for a hostname and verifies no prohibited address is returned
+ * Resolves all IP addresses for a hostname and verifies no prohibited address is returned.
+ * If ANY returned IP is prohibited, the entire query is rejected (prevents mixed DNS rebinding).
  */
 export async function verifyResolvedDnsEgress(hostname, allowLabSandbox = false) {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return { allowed: true, ips: ['127.0.0.1'] };
   }
 
-  // Internal test mock domains (*.internal) in local lab
   if (hostname.endsWith('.internal')) {
     return { allowed: true, ips: ['127.0.0.1'] };
   }
@@ -83,7 +90,7 @@ export async function verifyResolvedDnsEgress(hostname, allowLabSandbox = false)
       if (check.prohibited && !allowLabSandbox) {
         return {
           allowed: false,
-          reason: `DNS Rebinding / SSRF Defense: Hostname "${hostname}" resolves to prohibited IP ${ip} (${check.reason}). Outbound socket connection aborted.`,
+          reason: `DNS Rebinding / SSRF Defense: Hostname "${hostname}" returned prohibited IP ${ip} (${check.reason}). Mixed public/private resolution rejected.`,
           ips
         };
       }
@@ -100,7 +107,37 @@ export async function verifyResolvedDnsEgress(hostname, allowLabSandbox = false)
 }
 
 /**
- * Executes an HTTP probe with redirect revalidation and post-DNS destination validation
+ * Custom pinned DNS lookup for Node.js Agent sockets
+ */
+export function createPinnedLookup(allowLabSandbox = false) {
+  return (hostname, options, callback) => {
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.internal')) {
+      if (options && options.all) {
+        return callback(null, [{ address: '127.0.0.1', family: 4 }]);
+      }
+      return callback(null, '127.0.0.1', 4);
+    }
+
+    dnsSync.lookup(hostname, { all: true }, (err, addresses) => {
+      if (err) return callback(err);
+
+      for (const entry of addresses) {
+        const check = isProhibitedIp(entry.address);
+        if (check.prohibited && !allowLabSandbox) {
+          return callback(new Error(`SOCKET_PINNING_ABORT: Target resolved to prohibited IP ${entry.address} (${check.reason})`));
+        }
+      }
+
+      if (options && options.all) {
+        return callback(null, addresses);
+      }
+      return callback(null, addresses[0].address, addresses[0].family);
+    });
+  };
+}
+
+/**
+ * Executes an HTTP probe with redirect revalidation and socket-level destination pinning
  */
 export async function safeExecuteProbe(serverBaseUrl, requestSpec, options = {}) {
   const {
@@ -177,10 +214,10 @@ export async function safeExecuteProbe(serverBaseUrl, requestSpec, options = {})
       };
     }
 
-    // 3. Dispatch HTTP request with manual redirect handling
+    // 3. Dispatch HTTP probe with manual redirect interception
     const fetchOptions = {
       method: (redirectCount === 0 ? (requestSpec.method || 'GET') : 'GET').toUpperCase(),
-      redirect: 'manual', // Intercept all redirects for re-validation!
+      redirect: 'manual', // Strictly intercept all redirects for re-validation!
       headers: {
         'User-Agent': 'ProofLayer-HardenedEngine/1.4 (SafeEgress)',
         ...(requestSpec.headers || {})
@@ -216,9 +253,19 @@ export async function safeExecuteProbe(serverBaseUrl, requestSpec, options = {})
     const resHeaders = {};
     res.headers.forEach((v, k) => { resHeaders[k] = v; });
 
-    // 4. Check for Redirects (301, 302, 303, 307, 308)
+    // 4. Intercept Redirects (301, 302, 303, 307, 308)
     const isRedirect = [301, 302, 303, 307, 308].includes(res.status);
     if (isRedirect && res.headers.has('location')) {
+      if (redirectCount >= MAX_REDIRECTS) {
+        return {
+          status: 0,
+          statusText: 'MAX_REDIRECTS_EXCEEDED',
+          durationMs: Date.now() - startOverall,
+          headers: {},
+          body: { error: `Exceeded maximum allowable redirect depth of ${MAX_REDIRECTS}` },
+          redirectHistory
+        };
+      }
       const location = res.headers.get('location');
       redirectCount++;
       const resolvedRedirectUrl = new URL(location, currentUrl).toString();

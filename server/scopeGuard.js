@@ -84,15 +84,6 @@ export async function validateRetestScope(targetUrl, options = {}) {
                             hostname === '2852039166'; // Decimal IP for 169.254.169.254
 
   if (isMetadataLiteral) {
-    if (allowLabSandbox) {
-      // Allowed only when explicitly simulating an SSRF invariant inside an authorized lab fixture
-      return {
-        allowed: true,
-        reason: 'Authorized SSRF lab simulation fixture',
-        isSandbox: true,
-        sanitizedUrl: parsed.toString()
-      };
-    }
     return {
       allowed: false,
       reason: 'SECURITY VIOLATION: Retest target attempts to access cloud instance metadata (169.254.169.254 / metadata.google.internal). Request blocked by ProofLayer Scope Guard.',

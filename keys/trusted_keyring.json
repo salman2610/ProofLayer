@@ -1,18 +1,31 @@
 {
-  "pl-ed25519-2026-k1": {
-    "keyId": "pl-ed25519-2026-k1",
-    "algorithm": "Ed25519",
-    "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAueER8Lh80BgBDAd0usSfp4D/sp1ZdQjj0o2eeGLTxxY=\n-----END PUBLIC KEY-----\n",
-    "createdAt": "2026-10-27T00:00:00.000Z",
-    "status": "ACTIVE"
+  "keys": {
+    "pl-ed25519-2026-k1": {
+      "keyId": "pl-ed25519-2026-k1",
+      "algorithm": "Ed25519",
+      "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAueER8Lh80BgBDAd0usSfp4D/sp1ZdQjj0o2eeGLTxxY=\n-----END PUBLIC KEY-----\n",
+      "createdAt": "2026-10-27T00:00:00.000Z",
+      "status": "ACTIVE"
+    },
+    "pl-ed25519-temp-test-key": {
+      "keyId": "pl-ed25519-temp-test-key",
+      "algorithm": "Ed25519",
+      "publicKey": "",
+      "createdAt": "2026-10-27T07:02:42.869Z",
+      "status": "REVOKED",
+      "revokedAt": "2026-10-27T07:43:26.411Z",
+      "revocationReason": "Emergency revocation due to key rotation"
+    },
+    "pl-ed25519-rotation-test": {
+      "keyId": "pl-ed25519-rotation-test",
+      "algorithm": "Ed25519",
+      "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEACjW6mWzEOzj7fLW6yCGwa7CeIOYWqkAvI8PzvnX1XCQ=\n-----END PUBLIC KEY-----\n",
+      "createdAt": "2026-10-27T07:42:41.853Z",
+      "status": "REVOKED",
+      "retiredAt": "2026-10-25T00:00:00.000Z",
+      "revokedAt": "2026-10-27T07:42:41.855Z",
+      "revocationReason": "Emergency revocation: Private key leaked"
+    }
   },
-  "pl-ed25519-temp-test-key": {
-    "keyId": "pl-ed25519-temp-test-key",
-    "algorithm": "Ed25519",
-    "publicKey": "",
-    "createdAt": "2026-10-27T07:02:42.869Z",
-    "status": "REVOKED",
-    "revokedAt": "2026-10-27T07:02:42.869Z",
-    "revocationReason": "Emergency revocation due to key rotation"
-  }
+  "integritySeal": "a8da7af6ddee9ff6085c5b82221121b9d19dd91050fcd1b86a82a4eff6b4fae8"
 }
