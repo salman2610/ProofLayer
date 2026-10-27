@@ -32,6 +32,8 @@ export const findingsStore = [
     cvss: 9.1,
     asset: '/api/sandbox/invoices/1001',
     category: 'BOLA',
+    organizationId: 'org-acme',
+    engagementId: 'eng-acme-q4',
     status: 'PENDING_RETEST', // 'PENDING_RETEST' | 'VERIFIED' | 'PARTIAL_FIX' | 'REGRESSION_FOUND' | 'BYPASS_DETECTED'
     remediationConfidence: null,
     environmentTier: 'staging',
@@ -96,6 +98,8 @@ export const findingsStore = [
     cvss: 8.6,
     asset: '/api/sandbox/webhook',
     category: 'SSRF',
+    organizationId: 'org-acme',
+    engagementId: 'eng-acme-q4',
     status: 'PENDING_RETEST',
     remediationConfidence: null,
     environmentTier: 'staging',
@@ -157,6 +161,8 @@ export const findingsStore = [
     cvss: 8.2,
     asset: '/api/sandbox/admin/config',
     category: 'Broken Auth',
+    organizationId: 'org-acme',
+    engagementId: 'eng-acme-pci',
     status: 'PENDING_RETEST',
     remediationConfidence: null,
     environmentTier: 'staging',
@@ -194,6 +200,39 @@ export const findingsStore = [
           master_signing_key: 'SEC-ADMIN-JWT-SIGN-KEY-4412-LEAKED'
         }
       }
+    }),
+    latestRetest: null,
+    regressionMatrix: null,
+    proofRecord: null
+  },
+  {
+    id: 'PL-CS-101',
+    title: 'Tenant Boundary Traversal in GraphQL Proxy Gateway',
+    cwe: 'CWE-639',
+    cweName: 'Authorization Bypass',
+    severity: 'HIGH',
+    cvss: 8.5,
+    asset: '/api/partner/graphql',
+    category: 'Multi-Tenant Isolation',
+    organizationId: 'org-cybershield',
+    engagementId: 'eng-mssp-01',
+    status: 'PENDING_RETEST',
+    remediationConfidence: null,
+    environmentTier: 'staging',
+    assignedDev: 'dev-rhea@cybershield.io',
+    reportedBy: 'CyberShield Internal Red Team',
+    description: 'GraphQL proxy permits unauthorized cross-tenant query variables without verifying client tenant ID header.',
+    reproductionSteps: [
+      'Submit GraphQL query with tenantId="customer_beta" using customer_alpha credentials'
+    ],
+    expectedInvariants: {
+      expectedStatus: 403,
+      forbiddenStrings: ['customer_beta_vault']
+    },
+    baselineEvidence: redactEvidence({
+      timestamp: '2026-10-23T10:00:00Z',
+      request: { method: 'POST', url: '/api/partner/graphql', headers: { 'Authorization': 'Bearer test' } },
+      response: { status: 200, statusText: 'OK', durationMs: 45, headers: {}, body: 'customer_beta_vault' }
     }),
     latestRetest: null,
     regressionMatrix: null,

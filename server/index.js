@@ -9,6 +9,17 @@ import { generateProofRecord, verifyProofRecordIntegrity } from './crypto.js';
 import { redactEvidence, redactText, redactJson } from './redaction.js';
 import { sandboxRouter } from './sandbox.js';
 import { parseSarifWithProvenance, parseBurpWithProvenance, handleVCSWebhook } from './integrations.js';
+import { 
+  sessionMiddleware, 
+  rateLimit, 
+  createSession, 
+  usersStore, 
+  organizationsStore, 
+  engagementsStore, 
+  requireAuth, 
+  requireRoles, 
+  PERMISSIONS 
+} from './auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,14 +31,153 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../dist')));
+app.use(sessionMiddleware);
 
 // Sandbox Target Router (Mount under /api/sandbox)
 app.use('/api/sandbox', sandboxRouter);
 
-// --- Findings API ---
+// --- Authentication & Organization Management API ---
 
-// 1. List all findings
+// 1. Session status
+app.get('/api/auth/session', (req, res) => {
+  if (!req.user) {
+    return res.json({ authenticated: false, user: null, organization: null });
+  }
+  const org = organizationsStore.find(o => o.id === req.user.organizationId);
+  res.json({
+    authenticated: true,
+    user: req.user,
+    organization: org,
+    permissions: {
+      canExecuteRetest: PERMISSIONS.EXECUTE_RETEST.includes(req.user.role),
+      canIssueProof: PERMISSIONS.ISSUE_PROOF.includes(req.user.role),
+      canImportFindings: PERMISSIONS.IMPORT_FINDINGS.includes(req.user.role),
+      canManageOrg: PERMISSIONS.MANAGE_ORG.includes(req.user.role)
+    }
+  });
+});
+
+// 2. Demo role switcher (Instant login as any pre-seeded persona)
+app.post('/api/auth/demo-login', rateLimit(60, 60000), (req, res) => {
+  const { email, role, userId } = req.body || {};
+  let targetUser = null;
+
+  if (userId) {
+    targetUser = usersStore.find(u => u.id === userId);
+  } else if (email) {
+    targetUser = usersStore.find(u => u.email.toLowerCase() === email.toLowerCase());
+  } else if (role) {
+    targetUser = usersStore.find(u => u.role === role);
+  } else {
+    targetUser = usersStore.find(u => u.role === 'SECURITY_LEAD');
+  }
+
+  if (!targetUser) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const session = createSession(targetUser);
+  const org = organizationsStore.find(o => o.id === targetUser.organizationId);
+  logAuditEvent('AUTH_LOGIN_SUCCESS', `User ${targetUser.name} (${targetUser.role}) logged in to ${org?.name}`, targetUser.name);
+
+  res.json({
+    success: true,
+    sessionToken: session.token,
+    user: session,
+    organization: org
+  });
+});
+
+// 3. Email/Password Login
+app.post('/api/auth/login', rateLimit(20, 60000), (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  const user = usersStore.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) {
+    return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: 'Invalid email or password' });
+  }
+
+  const session = createSession(user);
+  const org = organizationsStore.find(o => o.id === user.organizationId);
+  logAuditEvent('AUTH_LOGIN_SUCCESS', `User ${user.email} authenticated successfully`, user.name);
+
+  res.json({
+    success: true,
+    sessionToken: session.token,
+    user: session,
+    organization: org
+  });
+});
+
+// 4. Logout
+app.post('/api/auth/logout', (req, res) => {
+  if (req.user) {
+    logAuditEvent('AUTH_LOGOUT', `User ${req.user.name} logged out`, req.user.name);
+  }
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// 5. List Organizations
+app.get('/api/organizations', (req, res) => {
+  res.json(organizationsStore);
+});
+
+// 6. List Engagements (Tenant-scoped)
+app.get('/api/engagements', (req, res) => {
+  if (req.user) {
+    const orgEngagements = engagementsStore.filter(e => e.organizationId === req.user.organizationId);
+    return res.json(orgEngagements);
+  }
+  // Public preview engagements
+  res.json(engagementsStore);
+});
+
+// 7. Organization Members (Tenant-scoped)
+app.get('/api/organizations/members', (req, res) => {
+  const orgId = req.user?.organizationId || 'org-acme';
+  const members = usersStore.filter(u => u.organizationId === orgId).map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    title: u.title,
+    organizationId: u.organizationId
+  }));
+  res.json(members);
+});
+
+// 8. Invite Member (Owner role required)
+app.post('/api/organizations/invite', requireRoles(PERMISSIONS.MANAGE_ORG), (req, res) => {
+  const { name, email, role = 'DEVELOPER', title = 'Engineer' } = req.body || {};
+  if (!email || !name) {
+    return res.status(400).json({ error: 'Name and email are required' });
+  }
+
+  const newUser = {
+    id: `usr-${Date.now()}`,
+    name,
+    email,
+    role,
+    title,
+    organizationId: req.user?.organizationId || 'org-acme'
+  };
+
+  usersStore.push(newUser);
+  logAuditEvent('ORG_MEMBER_INVITED', `Invited ${email} as ${role} to organization`, req.user?.name || 'Owner');
+  res.status(201).json({ success: true, member: newUser });
+});
+
+// --- Findings API (Tenant-Isolated & Role-Protected) ---
+
+// 1. List findings (Tenant isolated when authenticated)
 app.get('/api/findings', (req, res) => {
+  // If user is authenticated, filter by their organization
+  if (req.user && req.query.all !== 'true') {
+    const orgFindings = findingsStore.filter(f => f.organizationId === req.user.organizationId);
+    return res.json(orgFindings);
+  }
+  // Default: return all pre-seeded demo findings
   res.json(findingsStore);
 });
 
@@ -58,10 +208,18 @@ app.post('/api/findings', (req, res) => {
   }
 });
 
-// 4. Execute Scoped Retest
-app.post('/api/findings/:id/retest', async (req, res) => {
+// 4. Execute Scoped Retest (Server-Enforced RBAC & Tenant Isolation)
+app.post('/api/findings/:id/retest', requireRoles(PERMISSIONS.EXECUTE_RETEST), async (req, res) => {
   const finding = findingsStore.find(f => f.id === req.params.id);
   if (!finding) return res.status(404).json({ error: 'Finding not found' });
+
+  // Tenant Isolation Enforcement: Org A cannot retest Org B's findings
+  if (req.user && finding.organizationId && finding.organizationId !== req.user.organizationId) {
+    return res.status(403).json({
+      error: 'TENANT_ISOLATION_VIOLATION',
+      message: 'Access denied: Finding belongs to another organization.'
+    });
+  }
 
   try {
     const serverBaseUrl = `http://localhost:${PORT}`;
@@ -96,10 +254,18 @@ app.post('/api/findings/:id/retest', async (req, res) => {
   }
 });
 
-// 5. Issue & Cryptographically Seal Proof Record
-app.post('/api/findings/:id/issue-proof', (req, res) => {
+// 5. Issue & Cryptographically Seal Proof Record (Requires OWNER or SECURITY_LEAD)
+app.post('/api/findings/:id/issue-proof', requireRoles(PERMISSIONS.ISSUE_PROOF), (req, res) => {
   const finding = findingsStore.find(f => f.id === req.params.id);
   if (!finding) return res.status(404).json({ error: 'Finding not found' });
+
+  // Tenant Isolation Enforcement
+  if (req.user && finding.organizationId && finding.organizationId !== req.user.organizationId) {
+    return res.status(403).json({
+      error: 'TENANT_ISOLATION_VIOLATION',
+      message: 'Access denied: Finding belongs to another organization.'
+    });
+  }
 
   if (!finding.latestRetest) {
     return res.status(400).json({ error: 'Cannot issue proof: Retest has not been executed yet.' });

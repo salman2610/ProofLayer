@@ -13,17 +13,17 @@
       "publicKey": "",
       "createdAt": "2026-10-27T07:02:42.869Z",
       "status": "REVOKED",
-      "revokedAt": "2026-10-27T07:54:03.764Z",
+      "revokedAt": "2026-10-27T10:01:25.574Z",
       "revocationReason": "Emergency revocation due to key rotation"
     },
     "pl-ed25519-rotation-test": {
       "keyId": "pl-ed25519-rotation-test",
       "algorithm": "Ed25519",
-      "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEACjW6mWzEOzj7fLW6yCGwa7CeIOYWqkAvI8PzvnX1XCQ=\n-----END PUBLIC KEY-----\n",
-      "createdAt": "2026-10-27T07:42:41.853Z",
+      "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAxrxeeJAWqvC2Z0e4YRDVxNftzhxeZR8W1/plqmtqlQM=\n-----END PUBLIC KEY-----\n",
+      "createdAt": "2026-10-27T10:01:25.533Z",
       "status": "REVOKED",
       "retiredAt": "2026-10-25T00:00:00.000Z",
-      "revokedAt": "2026-10-27T07:42:41.855Z",
+      "revokedAt": "2026-10-27T10:01:25.535Z",
       "revocationReason": "Emergency revocation: Private key leaked"
     }
   },
