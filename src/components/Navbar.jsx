@@ -61,53 +61,51 @@ export default function Navbar({
             />
           </div>
 
-          {/* Apple Segmented Liquid Glass Navigation */}
+          {/* Mockup matching Navigation */}
           <nav className="liquid-segmented-capsule">
             <button 
               className={`liquid-segment-tab ${activePublicTab === 'home' ? 'active' : ''}`}
-              onClick={() => setActivePublicTab('home')}
+              onClick={() => {
+                setActivePublicTab('home');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               <span>Product</span>
             </button>
             <button 
-              className={`liquid-segment-tab ${activePublicTab === 'demo' ? 'active' : ''}`}
-              onClick={() => onExploreDemo ? onExploreDemo() : setActivePublicTab('demo')}
-              id="nav-interactive-demo-btn"
+              className="liquid-segment-tab"
+              onClick={() => {
+                setActivePublicTab('home');
+                setTimeout(() => {
+                  const el = document.getElementById('workflow');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 60);
+              }}
             >
-              <Terminal size={14} />
-              <span>Interactive Demo</span>
+              <span>How it works</span>
             </button>
             <button 
-              className={`liquid-segment-tab ${activePublicTab === 'trust' ? 'active' : ''}`}
-              onClick={() => setActivePublicTab('trust')}
+              className="liquid-segment-tab"
+              onClick={() => {
+                setActivePublicTab('home');
+                setTimeout(() => {
+                  const el = document.getElementById('security-teams') || document.getElementById('outcomes');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 60);
+              }}
             >
-              <Lock size={14} />
-              <span>Trust & Security</span>
+              <span>Use cases</span>
             </button>
             <button 
               className={`liquid-segment-tab ${activePublicTab === 'docs' ? 'active' : ''}`}
               onClick={() => setActivePublicTab('docs')}
             >
-              <FileText size={14} />
               <span>Docs</span>
             </button>
           </nav>
 
           {/* Right Action Buttons */}
           <div className="liquid-nav-actions">
-            {/* GitHub Issues & PRs Link */}
-            <a 
-              href="https://github.com/salman2610/ProofLayer" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="liquid-glass-btn github-btn"
-              title="View ProofLayer on GitHub: Open Issues & Pull Requests"
-            >
-              <GitHubIcon />
-              <span>GitHub (Issues & PRs)</span>
-              <ExternalLink size={12} className="ext-icon" />
-            </a>
-
             {currentUser ? (
               <div className="nav-user-session">
                 <button 
@@ -137,28 +135,36 @@ export default function Navbar({
               </div>
             ) : (
               <div className="nav-guest-actions">
+                <a 
+                  href="https://github.com/salman2610/ProofLayer" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="liquid-glass-btn github-btn"
+                  title="View ProofLayer on GitHub"
+                >
+                  <GitHubIcon />
+                  <span className="hide-on-mobile">GitHub</span>
+                </a>
+
                 <button 
                   className="liquid-glass-btn login-btn"
                   onClick={() => onOpenAuthModal('login')}
                   id="nav-login-btn"
                 >
-                  <LogIn size={15} />
-                  <span>Sign In</span>
+                  <LogIn size={14} />
+                  <span>Sign in</span>
                 </button>
 
                 <button 
-                  className="liquid-glass-btn persona-pill-btn"
-                  onClick={() => onOpenAuthModal('personas')}
-                  title="One-click switch to Lead, Developer, Auditor, or Owner personas"
+                  className="hero-amber-pill-btn nav-demo-pill"
+                  onClick={() => {
+                    const el = document.getElementById('access');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    else if (onExploreDemo) onExploreDemo();
+                  }}
+                  id="nav-request-demo-btn"
                 >
-                  <span>Personas</span>
-                </button>
-
-                <button 
-                  className="liquid-glass-primary-btn"
-                  onClick={() => onOpenAuthModal('signup')}
-                >
-                  <span>Get started</span>
+                  <span>Request a demo ➔</span>
                 </button>
               </div>
             )}
